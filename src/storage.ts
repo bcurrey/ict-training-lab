@@ -1,8 +1,9 @@
-import type { CertificationProgress, ChartAnnotation, QuizResult } from "./types";
+import type { BookmarkItem, CertificationProgress, ChartAnnotation, QuizResult } from "./types";
 
 const resultKey = "ict-training-lab-results";
 const annotationKey = "ict-training-lab-annotations";
 const certificationKey = "ict-training-lab-certification-progress";
+const bookmarkKey = "ict-training-lab-bookmarks";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -46,6 +47,14 @@ export function loadCertificationProgress(): CertificationProgress {
 
 export function saveCertificationProgress(progress: CertificationProgress) {
   write(certificationKey, progress);
+}
+
+export function loadBookmarks() {
+  return read<BookmarkItem[]>(bookmarkKey, []);
+}
+
+export function saveBookmarks(bookmarks: BookmarkItem[]) {
+  write(bookmarkKey, bookmarks);
 }
 
 export function nextReviewDate(correct: boolean, difficulty: number) {

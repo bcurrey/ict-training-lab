@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
+  Bookmark,
   BookOpen,
   Brain,
   CheckCircle2,
@@ -9,6 +10,7 @@ import {
   Flame,
   Gauge,
   Home,
+  HelpCircle,
   ImagePlus,
   Layers3,
   LineChart,
@@ -26,10 +28,11 @@ import {
   Zap
 } from "lucide-react";
 import { certificationModules, certificationQuizFor, chartScenarios, getModel, learningPaths, modelLabels, modelOrder, quizQuestions } from "./data";
-import { loadAnnotations, loadCertificationProgress, loadResults, nextReviewDate, saveAnnotations, saveCertificationProgress, saveResults } from "./storage";
+import { loadAnnotations, loadBookmarks, loadCertificationProgress, loadResults, nextReviewDate, saveAnnotations, saveBookmarks, saveCertificationProgress, saveResults } from "./storage";
 import type {
   AnnotationMarker,
   AnnotationTool,
+  BookmarkItem,
   Candle,
   CertificationModule,
   CertificationProgress,
@@ -44,10 +47,11 @@ import type {
   QuizResult
 } from "./types";
 
-type Page = "start" | "today" | "learn" | "chartLab" | "replay" | "review" | "progress" | "upload" | "flaw" | "mtf" | "narrative" | "library" | "quiz" | "paths" | "about" | "phone";
+type Page = "start" | "orientation" | "today" | "learn" | "chartLab" | "replay" | "review" | "progress" | "upload" | "flaw" | "mtf" | "narrative" | "library" | "quiz" | "paths" | "about" | "phone";
 
 const nav = [
   { page: "start" as const, label: "Start Here", icon: Home },
+  { page: "orientation" as const, label: "Orientation", icon: HelpCircle },
   { page: "today" as const, label: "Today", icon: Target },
   { page: "learn" as const, label: "Learn", icon: BookOpen },
   { page: "chartLab" as const, label: "Chart Drills", icon: ScanSearch },
@@ -59,6 +63,7 @@ const nav = [
 
 const pageTitles: Record<Page, string> = {
   start: "Start Here",
+  orientation: "Orientation",
   today: "Today's Training",
   learn: "Learn",
   chartLab: "Chart Drills",
@@ -190,6 +195,40 @@ function certificationOverview(progress: CertificationProgress) {
   return { certified, next, overall, level };
 }
 
+function calibrationStats(results: QuizResult[]) {
+  return {
+    highCorrect: results.filter((result) => result.confidence === "high" && result.result === "correct").length,
+    lowCorrect: results.filter((result) => result.confidence === "low" && result.result === "correct").length,
+    highWrong: results.filter((result) => result.confidence === "high" && result.result === "incorrect").length,
+    lowWrong: results.filter((result) => result.confidence === "low" && result.result === "incorrect").length
+  };
+}
+
+function coachMessages(results: QuizResult[], progress: CertificationProgress) {
+  const weak = weakAreas(results).filter((area) => area.total >= 3).slice(0, 2);
+  const cal = calibrationStats(results);
+  const overview = certificationOverview(progress);
+  const messages = [
+    `Next certification focus: ${overview.next.title}. Watching videos alone will not certify you.`,
+    cal.highWrong > 0 ? `Highest priority: ${cal.highWrong} wrong answers were high-confidence. These are dangerous misunderstandings.` : "Confidence is not showing dangerous overconfidence yet.",
+    weak[0] ? `${modelLabels[weak[0].model]} accuracy is ${weak[0].accuracy}%. Focus drills here next.` : "You need more reps before weak concepts are statistically meaningful.",
+    "Replay and narrative work matter more than rewatching videos once quizzes are passed."
+  ];
+  return messages;
+}
+
+function adaptivePlan(results: QuizResult[]) {
+  const weak = weakAreas(results);
+  const target = weak.find((area) => area.total === 0 || area.accuracy < 80)?.model ?? "Liquidity";
+  return [
+    `10 chart drills: ${modelLabels[target]}`,
+    "3 Spot the Trap examples",
+    "1 replay with hidden future candles",
+    "Review all high-confidence misses",
+    "Stop studying concepts above 90% accuracy unless certification requires it"
+  ];
+}
+
 function DifficultyBadge({ level }: { level: Difficulty }) {
   const labels = {
     1: "L1 Textbook",
@@ -313,7 +352,29 @@ function InteractiveChart({
   const [label, setLabel] = useState("liquidity");
   const [draft, setDraft] = useState<AnnotationMarker | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [history, setHistory] = useState<AnnotationMarker[][]>([]);
+  const [future, setFuture] = useState<AnnotationMarker[][]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const push = (next: AnnotationMarker[]) => {
+    setHistory([...history, annotations]);
+    setFuture([]);
+    setAnnotations(next);
+  };
+  const undo = () => {
+    const previous = history[history.length - 1];
+    if (!previous) return;
+    setFuture([annotations, ...future]);
+    setHistory(history.slice(0, -1));
+    setAnnotations(previous);
+  };
+  const redo = () => {
+    const next = future[0];
+    if (!next) return;
+    setHistory([...history, annotations]);
+    setFuture(future.slice(1));
+    setAnnotations(next);
+  };
 
   const point = (event: React.MouseEvent<HTMLDivElement> | React.PointerEvent<HTMLDivElement | HTMLSpanElement>) => {
     const rect = ref.current!.getBoundingClientRect();
@@ -334,12 +395,12 @@ function InteractiveChart({
       const marker: AnnotationMarker = tool === "rectangle"
         ? { ...draft, id: crypto.randomUUID(), width: p.x - draft.x, height: p.y - draft.y }
         : { ...draft, id: crypto.randomUUID(), x2: p.x, y2: p.y };
-      setAnnotations([...annotations, marker]);
+      push([...annotations, { ...marker, zIndex: annotations.length + 1, visible: true }]);
       setDraft(null);
       return;
     }
     const text = tool === "text" ? window.prompt("Note text", label) || label : label;
-    setAnnotations([...annotations, { id: crypto.randomUUID(), label, x: p.x, y: p.y, type: tool, text }]);
+    push([...annotations, { id: crypto.randomUUID(), label, x: p.x, y: p.y, type: tool, text, zIndex: annotations.length + 1, visible: true }]);
   };
 
   const dragMarker = (id: string, event: React.DragEvent<HTMLSpanElement>) => {
@@ -356,26 +417,45 @@ function InteractiveChart({
     const p = point(event);
     setAnnotations(annotations.map((marker) => marker.id === movingId ? { ...marker, x: p.x, y: p.y } : marker));
   };
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        undo();
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  });
+  const selected = annotations.find((marker) => marker.id === selectedId);
+  const updateSelected = (patch: Partial<AnnotationMarker>) => selectedId && push(annotations.map((marker) => marker.id === selectedId ? { ...marker, ...patch } : marker));
 
   return (
     <div className="chart-workbench">
       <div className="chart-toolbar">
+        <button onClick={undo}>Undo</button>
+        <button onClick={redo}>Redo</button>
+        <button onClick={() => push([])}>Clear</button>
         {(["marker", "rectangle", "arrow", "text"] as AnnotationTool[]).map((item) => <button className={cls(tool === item && "active")} key={item} onClick={() => setTool(item)}>{item}</button>)}
         <select value={label} onChange={(event) => setLabel(event.target.value)}>
           {markerLabels.map((item) => <option key={item}>{item}</option>)}
         </select>
-        <button className="ghost-button" onClick={() => setAnnotations([])}>Clear</button>
       </div>
       <div className="interactive-chart" ref={ref} onClick={onStageClick} onPointerMove={moveMarker} onPointerUp={() => setMovingId(null)} onPointerCancel={() => setMovingId(null)}>
         <ChartPreview scenario={scenario} revealCount={revealCount} showCallouts={showAnswer} />
-        {annotations.map((marker) => (
+        {annotations.filter((marker) => marker.visible !== false).map((marker) => (
           <span
-            className={cls("chart-label", marker.type === "rectangle" && "box-label", marker.type === "arrow" && "arrow-label")}
+            className={cls("chart-label", marker.type === "rectangle" && "box-label", marker.type === "arrow" && "arrow-label", selectedId === marker.id && "selected")}
             draggable
             key={marker.id}
             onPointerDown={(event) => {
               event.stopPropagation();
               setMovingId(marker.id);
+              setSelectedId(marker.id);
             }}
             onDragEnd={(event) => dragMarker(marker.id, event)}
             style={{
@@ -383,12 +463,25 @@ function InteractiveChart({
               top: `${(marker.y / 62) * 100}%`,
               width: marker.type === "rectangle" ? `${marker.width ?? 12}%` : undefined,
               height: marker.type === "rectangle" ? `${((marker.height ?? 10) / 62) * 100}%` : undefined
+              , zIndex: marker.zIndex ?? 2,
+              background: marker.color
             }}
           >
             {marker.text ?? marker.label}
           </span>
         ))}
       </div>
+      <aside className="annotation-sidebar">
+        <strong>Annotations</strong>
+        {annotations.map((marker) => (
+          <div className={cls("annotation-object", selectedId === marker.id && "active")} key={marker.id}>
+            <button onClick={() => setSelectedId(marker.id)}>{marker.label}</button>
+            <button onClick={() => push(annotations.map((item) => item.id === marker.id ? { ...item, visible: item.visible === false } : item))}>{marker.visible === false ? "Show" : "Hide"}</button>
+            <button onClick={() => push(annotations.filter((item) => item.id !== marker.id))}>Delete</button>
+          </div>
+        ))}
+        {selected && <div className="object-editor"><input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })} /><input type="color" value={selected.color ?? "#43f0a4"} onChange={(event) => updateSelected({ color: event.target.value })} /><button onClick={() => push([...annotations, { ...selected, id: crypto.randomUUID(), x: selected.x + 2, y: selected.y + 2, zIndex: annotations.length + 1 }])}>Duplicate</button><button onClick={() => updateSelected({ zIndex: 99 })}>Front</button><button onClick={() => updateSelected({ zIndex: 1 })}>Back</button></div>}
+      </aside>
     </div>
   );
 }
@@ -434,10 +527,50 @@ function CertificationTracker({ progress, setPage }: { progress: CertificationPr
         {certificationModules.slice(0, 9).map((module) => {
           const stats = moduleStats(module, progress);
           const unlocked = moduleUnlocked(module, progress);
-          return <div className={cls("cert-row", stats.certified && "certified", !unlocked && "locked")} key={module.id}><span>{stats.certified ? "✓" : unlocked ? "○" : "🔒"}</span><strong>{stats.certified ? module.certification : module.title}</strong><b>{stats.completion}%</b></div>;
+          return <div className={cls("cert-row", stats.certified && "certified", !unlocked && "locked")} key={module.id}><span>{stats.certified ? "✓" : unlocked ? "○" : "Lock"}</span><strong>{stats.certified ? module.certification : module.title}</strong><b>{stats.completion}%</b></div>;
         })}
       </div>
     </section>
+  );
+}
+
+function OrientationPage({ setPage }: { setPage: (page: Page) => void }) {
+  const loop = ["Learn", "Chart Drills", "Replay", "Review", "Certification"];
+  return (
+    <div className="page-grid">
+      <section className="panel start-panel">
+        <div>
+          <span>Orientation</span>
+          <h2>This is deliberate practice, not content consumption.</h2>
+          <p>ICT Training Lab trains recognition, narrative construction, decision-making, and failure recognition under uncertainty.</p>
+          <button className="primary-button" onClick={() => setPage("learn")}>Start My First Certification</button>
+        </div>
+        <div className="loop-visual">{loop.map((item, index) => <div className="flow-node" key={item}><span>{index + 1}</span><strong>{item}</strong>{index < loop.length - 1 && <ChevronRight />}</div>)}</div>
+      </section>
+      <section className="panel">
+        <div className="section-title"><div><span>What this app is</span><h2>Training roles</h2></div></div>
+        <div className="onboarding-grid">{["Pattern Recognition Trainer", "Market Structure Trainer", "Narrative Construction Trainer", "Deliberate Practice Platform", "Certification Platform"].map((item) => <article key={item}><strong>{item}</strong><p>Built to improve skill through repeated decisions and correction.</p></article>)}</div>
+      </section>
+      <section className="panel">
+        <div className="section-title"><div><span>What this app is not</span><h2>Boundaries</h2></div></div>
+        <div className="onboarding-grid">{["Not a signal service", "Not a trade copier", "Not an alert service", "Not financial advice", "Not a prediction engine"].map((item) => <article key={item}><strong>{item}</strong><p>It teaches context and recognition; it does not tell you what to trade.</p></article>)}</div>
+      </section>
+      <section className="panel">
+        <div className="section-title"><div><span>Certification track</span><h2>Foundation to Master</h2></div></div>
+        <div className="mode-list">
+          <p><strong>Foundation:</strong> Liquidity, Displacement, MSS, BOS, FVG.</p>
+          <p><strong>Intermediate:</strong> IFVG, BPR, Order Blocks, Breaker Blocks.</p>
+          <p><strong>Advanced:</strong> Premium/Discount, Sessions, MTF, Narrative, Failure Recognition.</p>
+          <p><strong>Master:</strong> multi-timeframe analysis, narrative construction, setup ID, invalidation, failure recognition, liquidity targeting, execution planning.</p>
+        </div>
+      </section>
+      <section className="panel">
+        <div className="section-title"><div><span>First week roadmap</span><h2>Seven-day start</h2></div></div>
+        <div className="today-list">
+          {["Day 1: Orientation + Liquidity videos", "Day 2: Liquidity quizzes", "Day 3: Liquidity chart drills", "Day 4: Replay liquidity raids", "Day 5: Spot the Trap liquidity examples", "Day 6: Remediation review", "Day 7: Liquidity certification attempt"].map((item, index) => <article key={item}><b>{index + 1}</b><div><strong>{item}</strong><p>Keep sessions short and correction-focused.</p></div></article>)}
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -499,12 +632,14 @@ function ConfidencePicker({ value, onChange }: { value: Confidence; onChange: (v
   return <div className="segmented confidence">{(["low", "medium", "high"] as Confidence[]).map((item) => <button className={cls(value === item && "active")} key={item} onClick={() => onChange(item)}>{item}</button>)}</div>;
 }
 
-function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation }: { scenarios: ChartScenario[]; results: QuizResult[]; setResults: (results: QuizResult[]) => void; saveAnnotation?: (scenario: ChartScenario, markers: AnnotationMarker[]) => void }) {
+function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation, bookmarks = [], setBookmarks }: { scenarios: ChartScenario[]; results: QuizResult[]; setResults: (results: QuizResult[]) => void; saveAnnotation?: (scenario: ChartScenario, markers: AnnotationMarker[]) => void; bookmarks?: BookmarkItem[]; setBookmarks?: (bookmarks: BookmarkItem[]) => void }) {
   const [selected, setSelected] = useState(scenarios[0]);
   const [markers, setMarkers] = useState<AnnotationMarker[]>([]);
   const [answer, setAnswer] = useState("");
   const [confidence, setConfidence] = useState<Confidence>("medium");
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [assist, setAssist] = useState(true);
   const [startedAt, setStartedAt] = useState(Date.now());
 
   useEffect(() => {
@@ -538,6 +673,13 @@ function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation }: {
     setShowAnswer(true);
   };
   const comparison = markupComparison(markers, selected);
+  const has = (term: string) => markers.some((marker) => marker.label.toLowerCase().includes(term));
+  const addBookmark = () => {
+    if (!setBookmarks) return;
+    const next = [{ id: crypto.randomUUID(), type: selected.mode === "replay" ? "replay" as const : "chart" as const, title: selected.title, refId: selected.id, model: selected.model, createdAt: todayIso(), note: selected.prompt }, ...bookmarks];
+    setBookmarks(next);
+    saveBookmarks(next);
+  };
 
   return (
     <div className="sim-layout">
@@ -545,9 +687,16 @@ function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation }: {
       <section className="panel sim-panel">
         <div className="section-title">
           <div><span>{selected.timeframe} - {modelLabels[selected.model]}</span><h2>{selected.prompt}</h2></div>
-          <DifficultyBadge level={selected.difficulty} />
+          <div className="action-row"><button className="ghost-button" onClick={() => setShowHelp(true)}><HelpCircle size={17} />Help</button><button className="ghost-button" onClick={addBookmark}><Bookmark size={17} />Bookmark</button><DifficultyBadge level={selected.difficulty} /></div>
         </div>
+        {assist && !showAnswer && <div className="mode-help"><strong>Beginner assist</strong><p>Hint: liquidity often sits near recent swings. Look for displacement after a sweep, then check whether an imbalance or structure break supports the read.</p><button className="ghost-button" onClick={() => setAssist(false)}>Hide hints</button></div>}
         <InteractiveChart scenario={selected} annotations={markers} setAnnotations={setMarkers} showAnswer={showAnswer} />
+        <div className="precheck">
+          <span className={cls(has("liquidity") && "done")}>Liquidity marked</span>
+          <span className={cls((has("mss") || has("bos")) && "done")}>MSS/BOS marked</span>
+          <span className={cls(has("fvg") && "done")}>FVG marked</span>
+          <span className="done">Confidence selected</span>
+        </div>
         <div className="decision-row">
           <div>
             <label>Confidence</label>
@@ -576,8 +725,14 @@ function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation }: {
             <p><strong>Concept trained:</strong> {modelLabels[selected.model]} recognition with context filtering.</p>
             <p><strong>Mistake prevented:</strong> {selected.mistakeTrained ?? "taking a pattern label without liquidity, displacement, timeframe alignment, and risk definition."}</p>
             <p><strong>Example type:</strong> {selected.exampleType ?? "realistic"}</p>
+            <div className="score-grid">
+              {["Liquidity", "MSS", "BOS", "FVG", "Narrative"].map((item) => <span key={item}><strong>{item} Score</strong><b>{markers.some((marker) => marker.label.toLowerCase().includes(item.toLowerCase().split(" ")[0])) ? "80%" : "40%"}</b></span>)}
+              <span><strong>Overall Score</strong><b>{comparison.missed === "Nothing major missed" ? "90%" : "62%"}</b></span>
+            </div>
+            <div className="trainer-compare"><div><strong>Your Markup</strong><ChartPreview scenario={selected} showCallouts={false} /></div><div><strong>Trainer Markup</strong><ChartPreview scenario={selected} showCallouts /></div></div>
           </div>
         )}
+        {showHelp && <div className="help-modal"><section className="panel"><div className="section-title"><div><span>Chart Drill Help</span><h2>How chart drills work</h2></div><button className="ghost-button" onClick={() => setShowHelp(false)}>Close</button></div><p>The goal is not to predict price. The goal is to identify concepts before seeing trainer markup.</p><div className="mode-list"><p><strong>Marker:</strong> liquidity, swing highs/lows, important candles.</p><p><strong>Arrow:</strong> displacement, MSS, BOS, narrative direction.</p><p><strong>Rectangle:</strong> FVG, IFVG, BPR, order block, breaker, premium/discount.</p><p><strong>Text:</strong> narrative, notes, reasoning, context.</p></div><div className="answer-panel"><strong>Example answer preview</strong><p>A complete answer usually marks liquidity, MSS/BOS, FVG, entry area, invalidation, and target. Compare your markup to trainer markup after submitting.</p></div></section></div>}
       </section>
     </div>
   );
@@ -633,6 +788,9 @@ function ReplayMode({ results, setResults }: { results: QuizResult[]; setResults
         <button className="primary-button" onClick={submitReplay}>Score replay</button>
       </div>
       <div className="answer-panel"><strong>Mission</strong><p>Before revealing future candles, mark liquidity, MSS, BOS, FVG, IFVG, breaker, entry, and invalidation when they appear.</p></div>
+      <section className="mission-panel">
+        {["Find liquidity sweep", "Find MSS", "Find first valid FVG", "Identify invalidation", "Identify draw on liquidity"].map((item) => <span key={item}>{item}</span>)}
+      </section>
     </section>
   );
 }
@@ -741,6 +899,53 @@ function DailyDrills({ onStart }: { onStart: (minutes: number) => void }) {
         <button className="drill-card" onClick={() => onStart(3)}><Zap /><strong>Rapid fire</strong><span>Chart-first recognition reps</span></button>
       </div>
     </section>
+  );
+}
+
+function CoachPanel({ results, progress }: { results: QuizResult[]; progress: CertificationProgress }) {
+  return (
+    <section className="panel">
+      <div className="section-title"><div><span>Coach Mode</span><h2>Study redirection</h2></div></div>
+      <div className="coach-list">{coachMessages(results, progress).map((message) => <p key={message}>{message}</p>)}</div>
+    </section>
+  );
+}
+
+function AdaptivePlan({ results }: { results: QuizResult[] }) {
+  return (
+    <section className="panel">
+      <div className="section-title"><div><span>Adaptive Engine</span><h2>Custom training plan</h2></div></div>
+      <div className="today-list">{adaptivePlan(results).map((item, index) => <article key={item}><b>{index + 1}</b><div><strong>{item}</strong><p>Generated from weak concepts, overconfidence, and missed patterns.</p></div></article>)}</div>
+    </section>
+  );
+}
+
+function ProgressEnhancements({ results, progress, bookmarks }: { results: QuizResult[]; progress: CertificationProgress; bookmarks: BookmarkItem[] }) {
+  const stats = resultStats(results);
+  const cal = calibrationStats(results);
+  const drillResults = results.filter((result) => result.mode === "chart" || result.mode === "spotFlaw");
+  const replayResults = results.filter((result) => result.question.toLowerCase().includes("replay"));
+  const certified = certificationModules.filter((module) => moduleStats(module, progress).certified).length;
+  return (
+    <div className="page-grid">
+      <ProgressSummary results={results} />
+      <section className="panel">
+        <div className="section-title"><div><span>Performance Dashboard</span><h2>Mastery metrics</h2></div></div>
+        <div className="metric-grid">
+          <section className="metric-card"><Gauge /><p>Learning Velocity</p><strong>{results.length ? `${Math.min(100, results.length * 2)}%` : "0%"}</strong></section>
+          <section className="metric-card"><RotateCcw /><p>Concept Retention</p><strong>{stats.accuracy}%</strong></section>
+          <section className="metric-card"><Trophy /><p>Certifications</p><strong>{certified}</strong></section>
+          <section className="metric-card"><Clock3 /><p>Time Studied</p><strong>{Math.round(results.length * 1.5)}m</strong></section>
+          <section className="metric-card"><ScanSearch /><p>Drill Accuracy</p><strong>{drillResults.length ? Math.round((drillResults.filter((r) => r.result === "correct").length / drillResults.length) * 100) : 0}%</strong></section>
+          <section className="metric-card"><Play /><p>Replay Accuracy</p><strong>{replayResults.length ? Math.round((replayResults.filter((r) => r.result === "correct").length / replayResults.length) * 100) : 0}%</strong></section>
+        </div>
+      </section>
+      <section className="panel"><div className="section-title"><div><span>Confidence Calibration</span><h2>Dangerous misunderstandings</h2></div></div><div className="score-grid"><span><strong>Correct + High</strong><b>{cal.highCorrect}</b></span><span><strong>Correct + Low</strong><b>{cal.lowCorrect}</b></span><span><strong>Wrong + High</strong><b>{cal.highWrong}</b></span><span><strong>Wrong + Low</strong><b>{cal.lowWrong}</b></span></div></section>
+      <CoachPanel results={results} progress={progress} />
+      <AdaptivePlan results={results} />
+      <section className="panel"><div className="section-title"><div><span>Bookmarks</span><h2>Review later</h2></div></div><div className="cert-list">{bookmarks.length ? bookmarks.map((item) => <div className="cert-row" key={item.id}><Bookmark size={16} /><strong>{item.title}</strong><b>{item.type}</b></div>) : <p className="empty">No bookmarks yet.</p>}</div></section>
+      <section className="panel"><div className="section-title"><div><span>Mastery Heatmap</span><h2>Strongest and weakest models</h2></div></div><div className="stack">{weakAreas(results).map((area) => <div className="weak-row" key={area.model}><div><strong>{modelLabels[area.model]}</strong><span>{area.total} attempts</span></div><div className="bar"><i style={{ width: `${area.accuracy}%` }} /></div><b>{area.accuracy}%</b></div>)}</div></section>
+    </div>
   );
 }
 
@@ -1118,6 +1323,7 @@ export function App() {
   const [results, setResults] = useState<QuizResult[]>(loadResults);
   const [annotations, setAnnotations] = useState<ChartAnnotation[]>(loadAnnotations);
   const [certificationProgress, setCertificationProgress] = useState<CertificationProgress>(loadCertificationProgress);
+  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>(loadBookmarks);
   const [quizModel, setQuizModel] = useState<ModelKey | "all">("all");
   const [beginnerMode, setBeginnerMode] = useState(true);
   const stats = resultStats(results);
@@ -1156,6 +1362,7 @@ export function App() {
         </header>
 
         {page === "start" && <StartHere setPage={setPage} certificationProgress={certificationProgress} />}
+        {page === "orientation" && <OrientationPage setPage={setPage} />}
 
         {page === "about" && <AboutSystem setPage={setPage} />}
         {page === "phone" && <PhoneHelp setPage={setPage} />}
@@ -1164,25 +1371,11 @@ export function App() {
 
         {page === "learn" && <LearnHub results={results} setPage={setPage} startQuiz={startQuiz} beginnerMode={beginnerMode} setBeginnerMode={setBeginnerMode} certificationProgress={certificationProgress} setCertificationProgress={setCertificationProgress} />}
 
-        {page === "progress" && (
-          <div className="page-grid">
-            <ProgressSummary results={results} />
-            <section className="hero-sim panel">
-              <div><span>Priority Training</span><h2>Chart-first recognition reps</h2><p>Work from unmarked candlestick charts, place your own labels, then reveal the trainer markup.</p><button className="primary-button" onClick={() => setPage("chartLab")}>Open Chart Lab</button></div>
-              <ChartPreview scenario={chartScenarios[0]} showCallouts />
-            </section>
-            <DailyDrills onStart={() => setPage("chartLab")} />
-            <WeakAreasPanel results={results} />
-            <MtfPanels />
-            <RelationshipMap />
-            <ReviewQueue results={results} onPractice={startQuiz} />
-            <section className="panel"><div className="section-title"><div><span>Confidence Analytics</span><h2>Confidence vs correctness</h2></div></div><div className="confidence-readout"><strong>{stats.overconfident}</strong><span>high-confidence misses</span><strong>{stats.avgSpeed || "--"}s</strong><span>average answered speed</span></div></section>
-          </div>
-        )}
+        {page === "progress" && <ProgressEnhancements results={results} progress={certificationProgress} bookmarks={bookmarks} />}
 
-        {page === "chartLab" && <><ModeHelp id="chartLab" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && (!beginnerMode || phaseStatus(results).foundationPassed || ["Liquidity", "MSS", "BOS", "FVG"].includes(scenario.model)))} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} /></>}
+        {page === "chartLab" && <><ModeHelp id="chartLab" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && (!beginnerMode || phaseStatus(results).foundationPassed || ["Liquidity", "MSS", "BOS", "FVG"].includes(scenario.model)))} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
         {page === "replay" && <><ModeHelp id="replay" /><ReplayMode results={results} setResults={setResults} /></>}
-        {page === "flaw" && <><ModeHelp id="flaw" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "invalid")} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} /></>}
+        {page === "flaw" && <><ModeHelp id="flaw" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "invalid")} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
         {page === "mtf" && <div className="page-grid"><ModeHelp id="mtf" /><MtfPanels /><MtfMode results={results} setResults={setResults} /></div>}
         {page === "narrative" && <><ModeHelp id="narrative" /><NarrativeMode results={results} setResults={setResults} /></>}
         {page === "paths" && <div className="page-grid"><LearningPaths results={results} /><RelationshipMap /></div>}

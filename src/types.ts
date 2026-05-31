@@ -66,6 +66,9 @@ export interface AnnotationMarker {
   x: number;
   y: number;
   type?: AnnotationTool;
+  color?: string;
+  visible?: boolean;
+  zIndex?: number;
   width?: number;
   height?: number;
   x2?: number;
@@ -185,4 +188,14 @@ export interface CertificationProgress {
   chartDrills: Record<string, number>;
   replayExercises: Record<string, number>;
   examScores: Record<string, number>;
+}
+
+export interface BookmarkItem {
+  id: string;
+  type: "chart" | "question" | "video" | "replay" | "drill";
+  title: string;
+  refId: string;
+  model?: ModelKey;
+  createdAt: string;
+  note?: string;
 }
