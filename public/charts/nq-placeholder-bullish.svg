@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 850">
+  <rect width="1400" height="850" fill="#0b1118"/>
+  <g stroke="#172535" stroke-width="1">
+    <path d="M0 90H1400M0 170H1400M0 250H1400M0 330H1400M0 410H1400M0 490H1400M0 570H1400M0 650H1400M0 730H1400"/>
+    <path d="M90 0V850M190 0V850M290 0V850M390 0V850M490 0V850M590 0V850M690 0V850M790 0V850M890 0V850M990 0V850M1090 0V850M1190 0V850M1290 0V850"/>
+  </g>
+  <text x="34" y="48" fill="#8da19e" font-family="Arial" font-size="24">NQ1! 5m - TradingView-style placeholder</text>
+  <text x="1220" y="48" fill="#43f0a4" font-family="Arial" font-size="22">ICT Training Lab</text>
+  <path d="M70 680 C180 710 250 630 340 650 S500 570 585 610 S710 410 820 450 S970 330 1110 350 S1250 250 1340 290" fill="none" stroke="#2a4255" stroke-width="5"/>
+  <g stroke-width="3">
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="90" y1="640" x2="90" y2="720"/><rect x="82" y="665" width="16" height="34"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="125" y1="650" x2="125" y2="705"/><rect x="117" y="660" width="16" height="28"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="160" y1="630" x2="160" y2="710"/><rect x="152" y="650" width="16" height="42"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="195" y1="610" x2="195" y2="700"/><rect x="187" y="625" width="16" height="54"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="230" y1="575" x2="230" y2="670"/><rect x="222" y="590" width="16" height="62"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="265" y1="590" x2="265" y2="680"/><rect x="257" y="610" width="16" height="45"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="300" y1="605" x2="300" y2="735"/><rect x="292" y="635" width="16" height="70"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="335" y1="590" x2="335" y2="700"/><rect x="327" y="610" width="16" height="58"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="370" y1="545" x2="370" y2="660"/><rect x="362" y="560" width="16" height="82"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="405" y1="490" x2="405" y2="620"/><rect x="397" y="505" width="16" height="94"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="440" y1="430" x2="440" y2="575"/><rect x="432" y="445" width="16" height="112"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="475" y1="455" x2="475" y2="560"/><rect x="467" y="475" width="16" height="54"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="510" y1="420" x2="510" y2="540"/><rect x="502" y="435" width="16" height="78"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="545" y1="375" x2="545" y2="510"/><rect x="537" y="390" width="16" height="88"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="580" y1="390" x2="580" y2="520"/><rect x="572" y="420" width="16" height="62"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="615" y1="355" x2="615" y2="490"/><rect x="607" y="370" width="16" height="92"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="650" y1="310" x2="650" y2="455"/><rect x="642" y="325" width="16" height="104"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="685" y1="255" x2="685" y2="405"/><rect x="677" y="275" width="16" height="102"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="720" y1="275" x2="720" y2="420"/><rect x="712" y="310" width="16" height="72"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="755" y1="235" x2="755" y2="385"/><rect x="747" y="252" width="16" height="108"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="790" y1="210" x2="790" y2="360"/><rect x="782" y="230" width="16" height="86"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="825" y1="240" x2="825" y2="385"/><rect x="817" y="275" width="16" height="68"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="860" y1="205" x2="860" y2="350"/><rect x="852" y="220" width="16" height="84"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="895" y1="185" x2="895" y2="330"/><rect x="887" y="205" width="16" height="76"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="930" y1="210" x2="930" y2="360"/><rect x="922" y="235" width="16" height="74"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="965" y1="175" x2="965" y2="320"/><rect x="957" y="190" width="16" height="86"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="1000" y1="150" x2="1000" y2="295"/><rect x="992" y="170" width="16" height="78"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="1035" y1="125" x2="1035" y2="270"/><rect x="1027" y="145" width="16" height="80"/></g>
+  </g>
+  <rect x="436" y="426" width="130" height="84" fill="#44d6ff" opacity=".12" stroke="#44d6ff" stroke-width="2"/>
+  <path d="M276 710H396" stroke="#f6bd60" stroke-width="4" stroke-dasharray="10 10"/>
+  <path d="M1020 150H1320" stroke="#43f0a4" stroke-width="4" stroke-dasharray="8 8"/>
+</svg>

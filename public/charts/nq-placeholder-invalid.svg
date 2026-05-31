@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 850">
+  <rect width="1400" height="850" fill="#0b1118"/>
+  <g stroke="#172535" stroke-width="1">
+    <path d="M0 100H1400M0 190H1400M0 280H1400M0 370H1400M0 460H1400M0 550H1400M0 640H1400M0 730H1400"/>
+    <path d="M100 0V850M220 0V850M340 0V850M460 0V850M580 0V850M700 0V850M820 0V850M940 0V850M1060 0V850M1180 0V850M1300 0V850"/>
+  </g>
+  <text x="34" y="48" fill="#8da19e" font-family="Arial" font-size="24">MNQ1! 1m - invalid setup placeholder</text>
+  <path d="M80 410 C180 340 260 510 360 430 S540 490 650 420 S820 510 930 430 S1120 500 1320 420" fill="none" stroke="#2a4255" stroke-width="5"/>
+  <g stroke-width="3">
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="100" y1="350" x2="100" y2="500"/><rect x="92" y="390" width="16" height="70"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="145" y1="330" x2="145" y2="540"/><rect x="137" y="370" width="16" height="118"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="190" y1="360" x2="190" y2="520"/><rect x="182" y="390" width="16" height="74"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="235" y1="380" x2="235" y2="590"/><rect x="227" y="430" width="16" height="94"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="280" y1="350" x2="280" y2="530"/><rect x="272" y="390" width="16" height="58"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="325" y1="390" x2="325" y2="600"/><rect x="317" y="440" width="16" height="90"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="370" y1="360" x2="370" y2="530"/><rect x="362" y="400" width="16" height="54"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="415" y1="390" x2="415" y2="570"/><rect x="407" y="430" width="16" height="72"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="460" y1="350" x2="460" y2="520"/><rect x="452" y="390" width="16" height="58"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="505" y1="380" x2="505" y2="590"/><rect x="497" y="425" width="16" height="100"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="550" y1="340" x2="550" y2="535"/><rect x="542" y="390" width="16" height="62"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="595" y1="390" x2="595" y2="605"/><rect x="587" y="430" width="16" height="112"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="640" y1="345" x2="640" y2="525"/><rect x="632" y="385" width="16" height="70"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="685" y1="385" x2="685" y2="580"/><rect x="677" y="420" width="16" height="86"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="730" y1="342" x2="730" y2="535"/><rect x="722" y="385" width="16" height="66"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="775" y1="395" x2="775" y2="592"/><rect x="767" y="430" width="16" height="96"/></g>
+    <g stroke="#43f0a4" fill="#43f0a4"><line x1="820" y1="350" x2="820" y2="520"/><rect x="812" y="392" width="16" height="58"/></g>
+    <g stroke="#ff5c7a" fill="#ff5c7a"><line x1="865" y1="390" x2="865" y2="585"/><rect x="857" y="430" width="16" height="92"/></g>
+  </g>
+  <rect x="500" y="365" width="230" height="80" fill="#ff5c7a" opacity=".12" stroke="#ff5c7a" stroke-width="2"/>
+  <path d="M200 330H970" stroke="#f6bd60" stroke-width="4" stroke-dasharray="12 10"/>
+  <text x="860" y="210" fill="#ff5c7a" font-family="Arial" font-size="28">chop / weak displacement</text>
+</svg>
