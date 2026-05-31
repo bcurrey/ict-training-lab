@@ -1,7 +1,8 @@
-import type { ChartAnnotation, QuizResult } from "./types";
+import type { CertificationProgress, ChartAnnotation, QuizResult } from "./types";
 
 const resultKey = "ict-training-lab-results";
 const annotationKey = "ict-training-lab-annotations";
+const certificationKey = "ict-training-lab-certification-progress";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -30,6 +31,21 @@ export function loadAnnotations() {
 
 export function saveAnnotations(annotations: ChartAnnotation[]) {
   write(annotationKey, annotations);
+}
+
+export function loadCertificationProgress(): CertificationProgress {
+  return read<CertificationProgress>(certificationKey, {
+    watchedVideos: {},
+    videoNotes: {},
+    quizScores: {},
+    chartDrills: {},
+    replayExercises: {},
+    examScores: {}
+  });
+}
+
+export function saveCertificationProgress(progress: CertificationProgress) {
+  write(certificationKey, progress);
 }
 
 export function nextReviewDate(correct: boolean, difficulty: number) {

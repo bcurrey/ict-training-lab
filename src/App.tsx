@@ -25,12 +25,15 @@ import {
   XCircle,
   Zap
 } from "lucide-react";
-import { chartScenarios, getModel, learningPaths, modelLabels, modelOrder, quizQuestions } from "./data";
-import { loadAnnotations, loadResults, nextReviewDate, saveAnnotations, saveResults } from "./storage";
+import { certificationModules, certificationQuizFor, chartScenarios, getModel, learningPaths, modelLabels, modelOrder, quizQuestions } from "./data";
+import { loadAnnotations, loadCertificationProgress, loadResults, nextReviewDate, saveAnnotations, saveCertificationProgress, saveResults } from "./storage";
 import type {
   AnnotationMarker,
   AnnotationTool,
   Candle,
+  CertificationModule,
+  CertificationProgress,
+  CertificationQuizQuestion,
   ChartAnnotation,
   ChartCallout,
   ChartScenario,
@@ -150,6 +153,41 @@ function phaseStatus(results: QuizResult[]) {
   const foundationPassed = liquidity.passed && mss.passed && bos.passed && fvg.passed;
   const imbalancePassed = foundationPassed && ["IFVG", "BPR", "OrderBlock", "Breaker"].every((model) => masteryFor(results, model as ModelKey).passed);
   return { liquidity, mss, bos, fvg, foundationPassed, imbalancePassed };
+}
+
+function moduleStats(module: CertificationModule, progress: CertificationProgress) {
+  const watched = module.videos.filter((video) => progress.watchedVideos[video.id]).length;
+  const quizPassed = module.videos.filter((video) => (progress.quizScores[video.id] ?? 0) >= 80).length;
+  const drills = progress.chartDrills[module.id] ?? 0;
+  const replays = progress.replayExercises[module.id] ?? 0;
+  const exam = progress.examScores[module.id] ?? 0;
+  const videosDone = module.videos.length ? watched / module.videos.length : 1;
+  const quizzesDone = module.videos.length ? quizPassed / module.videos.length : 1;
+  const drillsDone = Math.min(1, drills / module.chartDrillsRequired);
+  const replaysDone = Math.min(1, replays / module.replayRequired);
+  const examDone = exam >= module.passingScore ? 1 : 0;
+  const completion = Math.round(((videosDone + quizzesDone + drillsDone + replaysDone + examDone) / 5) * 100);
+  const certified = completion === 100;
+  return { watched, quizPassed, drills, replays, exam, completion, certified };
+}
+
+function moduleUnlocked(module: CertificationModule, progress: CertificationProgress) {
+  return (module.unlockAfter ?? []).every((id) => {
+    const dependency = certificationModules.find((item) => item.id === id);
+    return dependency ? moduleStats(dependency, progress).certified : true;
+  });
+}
+
+function certificationOverview(progress: CertificationProgress) {
+  const certified = certificationModules.filter((module) => moduleStats(module, progress).certified);
+  const next = certificationModules.find((module) => moduleUnlocked(module, progress) && !moduleStats(module, progress).certified) ?? certificationModules[certificationModules.length - 1];
+  const overall = Math.round(certificationModules.reduce((sum, module) => sum + moduleStats(module, progress).completion, 0) / certificationModules.length);
+  const level = certified.some((module) => module.level === "Advanced" || module.level === "Master")
+    ? "Advanced"
+    : certified.some((module) => module.level === "Intermediate")
+      ? "Intermediate"
+      : "Foundation";
+  return { certified, next, overall, level };
 }
 
 function DifficultyBadge({ level }: { level: Difficulty }) {
@@ -377,6 +415,29 @@ function ProgressSummary({ results }: { results: QuizResult[] }) {
         return <section className="metric-card" key={card.label}><Icon size={20} /><p>{card.label}</p><strong>{card.value}</strong></section>;
       })}
     </div>
+  );
+}
+
+function CertificationTracker({ progress, setPage }: { progress: CertificationProgress; setPage: (page: Page) => void }) {
+  const overview = certificationOverview(progress);
+  return (
+    <section className="panel certification-tracker">
+      <div className="section-title">
+        <div><span>Certification Tracker</span><h2>{overview.level} Level</h2></div>
+        <button className="primary-button" onClick={() => setPage("learn")}>Open Certification Path</button>
+      </div>
+      <div className="cert-summary">
+        <div><strong>{overview.overall}%</strong><span>overall completion</span></div>
+        <div><strong>{overview.next.title}</strong><span>next required module</span></div>
+      </div>
+      <div className="cert-list">
+        {certificationModules.slice(0, 9).map((module) => {
+          const stats = moduleStats(module, progress);
+          const unlocked = moduleUnlocked(module, progress);
+          return <div className={cls("cert-row", stats.certified && "certified", !unlocked && "locked")} key={module.id}><span>{stats.certified ? "✓" : unlocked ? "○" : "🔒"}</span><strong>{stats.certified ? module.certification : module.title}</strong><b>{stats.completion}%</b></div>;
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -786,9 +847,10 @@ const recommendedPath = [
   { phase: "Phase 3 - Execution", items: ["Order Blocks", "Breaker Blocks", "Multi-timeframe alignment", "Full trade narrative"], why: "These connect model recognition into execution logic without turning it into a signal service.", mode: "Replay, MTF, Narrative, Upload", score: "80%+ on 20 mixed questions plus one saved self-graded chart." }
 ];
 
-function StartHere({ setPage }: { setPage: (page: Page) => void }) {
+function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) => void; certificationProgress: CertificationProgress }) {
   return (
     <div className="page-grid">
+      <CertificationTracker progress={certificationProgress} setPage={setPage} />
       <section className="panel start-panel">
         <div>
           <span>First session</span>
@@ -869,11 +931,113 @@ function TodayTraining({ setPage, results, setResults, startQuiz }: { setPage: (
   );
 }
 
-function LearnHub({ results, setPage, startQuiz, beginnerMode, setBeginnerMode }: { results: QuizResult[]; setPage: (page: Page) => void; startQuiz: (model?: ModelKey) => void; beginnerMode: boolean; setBeginnerMode: (value: boolean) => void }) {
+function ModuleCard({ module, progress, setProgress }: { module: CertificationModule; progress: CertificationProgress; setProgress: (progress: CertificationProgress) => void }) {
+  const [open, setOpen] = useState(false);
+  const [activeQuiz, setActiveQuiz] = useState<string | null>(null);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizCorrect, setQuizCorrect] = useState(0);
+  const stats = moduleStats(module, progress);
+  const unlocked = moduleUnlocked(module, progress);
+  const quizVideo = module.videos.find((video) => video.id === activeQuiz);
+  const quiz = quizVideo ? certificationQuizFor(quizVideo, module) : [];
+  const current = quiz[quizIndex];
+  const update = (next: CertificationProgress) => {
+    setProgress(next);
+    saveCertificationProgress(next);
+  };
+  const answerQuiz = (question: CertificationQuizQuestion, answer: string) => {
+    const nextCorrect = quizCorrect + (answer === question.answer ? 1 : 0);
+    if (quizIndex >= quiz.length - 1 && quizVideo) {
+      const score = Math.round((nextCorrect / quiz.length) * 100);
+      update({ ...progress, quizScores: { ...progress.quizScores, [quizVideo.id]: score } });
+      setActiveQuiz(null);
+      setQuizIndex(0);
+      setQuizCorrect(0);
+      return;
+    }
+    setQuizCorrect(nextCorrect);
+    setQuizIndex(quizIndex + 1);
+  };
+  const simulateExam = () => {
+    const ready = stats.watched === module.videos.length && stats.quizPassed === module.videos.length && stats.drills >= module.chartDrillsRequired && stats.replays >= module.replayRequired;
+    const score = ready ? module.passingScore : Math.max(40, module.passingScore - 12);
+    update({ ...progress, examScores: { ...progress.examScores, [module.id]: score } });
+  };
+  return (
+    <article className={cls("lms-module", !unlocked && "locked", stats.certified && "certified")}>
+      <button className="module-head" onClick={() => unlocked && setOpen(!open)}>
+        <div><span>{module.level}</span><h3>{module.title}</h3><p>{module.description}</p></div>
+        <div className="module-score"><strong>{stats.completion}%</strong><small>{stats.certified ? module.certification : unlocked ? "In progress" : "Locked"}</small></div>
+      </button>
+      <div className="bar"><i style={{ width: `${stats.completion}%` }} /></div>
+      {open && unlocked && (
+        <div className="module-body">
+          <div className="requirement-grid">
+            <span>Videos: {stats.watched}/{module.videos.length}</span>
+            <span>Quizzes: {stats.quizPassed}/{module.videos.length}</span>
+            <span>Chart drills: {stats.drills}/{module.chartDrillsRequired}</span>
+            <span>Replay: {stats.replays}/{module.replayRequired}</span>
+            <span>Exam: {stats.exam || 0}% / {module.passingScore}%</span>
+          </div>
+          <div className="video-list">
+            {module.videos.map((video) => (
+              <section className="video-card" key={video.id}>
+                <label><input type="checkbox" checked={Boolean(progress.watchedVideos[video.id])} onChange={(event) => update({ ...progress, watchedVideos: { ...progress.watchedVideos, [video.id]: event.target.checked } })} /> <strong>{video.creator} - {video.title}</strong></label>
+                <span>{video.runtime}</span>
+                <textarea value={progress.videoNotes[video.id] ?? ""} onChange={(event) => update({ ...progress, videoNotes: { ...progress.videoNotes, [video.id]: event.target.value } })} placeholder="Notes: what recognition rule, invalidation, or chart behavior matters?" />
+                <button className="ghost-button" disabled={!progress.watchedVideos[video.id]} onClick={() => setActiveQuiz(video.id)}>Take 10-question quiz {progress.quizScores[video.id] ? `(${progress.quizScores[video.id]}%)` : ""}</button>
+              </section>
+            ))}
+          </div>
+          {activeQuiz && current && (
+            <section className="quiz-card inline-quiz">
+              <div className="quiz-meta"><span>{quizVideo?.title}</span><span>{quizIndex + 1}/10</span></div>
+              <h2>{current.prompt}</h2>
+              <div className="choice-grid">{current.choices.map((choice) => <button key={choice} onClick={() => answerQuiz(current, choice)}>{choice}</button>)}</div>
+              <p className="empty">{current.explanation}</p>
+            </section>
+          )}
+          <div className="action-row">
+            <button className="ghost-button" onClick={() => update({ ...progress, chartDrills: { ...progress.chartDrills, [module.id]: stats.drills + 1 } })}>Log chart drill</button>
+            <button className="ghost-button" onClick={() => update({ ...progress, replayExercises: { ...progress.replayExercises, [module.id]: stats.replays + 1 } })}>Log replay exercise</button>
+            <button className="primary-button" onClick={simulateExam}>Take final certification exam</button>
+          </div>
+          <div className="answer-panel"><strong>Final Exam</strong><p>{module.examCharts} charts. Passing score: {module.passingScore}%. Topics: {module.examTopics.join(", ")}.</p></div>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function CertificationPath({ progress, setProgress }: { progress: CertificationProgress; setProgress: (progress: CertificationProgress) => void }) {
+  const overview = certificationOverview(progress);
+  return (
+    <div className="page-grid">
+      <CertificationTracker progress={progress} setPage={() => undefined} />
+      <section className="panel">
+        <div className="section-title"><div><span>Certification Philosophy</span><h2>Watching videos does not equal mastery</h2></div></div>
+        <div className="mode-list">
+          <p><strong>1. Curated Videos:</strong> mark watched and take notes.</p>
+          <p><strong>2. Knowledge Checks:</strong> each video has a 10-question application quiz.</p>
+          <p><strong>3. Chart Drills:</strong> prove recognition through examples.</p>
+          <p><strong>4. Replay:</strong> train without hindsight.</p>
+          <p><strong>5. Final Exam:</strong> locked until module work is complete.</p>
+          <p><strong>Next:</strong> {overview.next.title}</p>
+        </div>
+      </section>
+      <div className="lms-stack">
+        {certificationModules.map((module) => <ModuleCard key={module.id} module={module} progress={progress} setProgress={setProgress} />)}
+      </div>
+    </div>
+  );
+}
+
+function LearnHub({ results, setPage, startQuiz, beginnerMode, setBeginnerMode, certificationProgress, setCertificationProgress }: { results: QuizResult[]; setPage: (page: Page) => void; startQuiz: (model?: ModelKey) => void; beginnerMode: boolean; setBeginnerMode: (value: boolean) => void; certificationProgress: CertificationProgress; setCertificationProgress: (progress: CertificationProgress) => void }) {
   const gates = phaseStatus(results);
   return (
     <div className="page-grid">
       <ModeHelp id="learn" />
+      <CertificationPath progress={certificationProgress} setProgress={setCertificationProgress} />
       <section className="panel beginner-card">
         <div>
           <span>Beginner mode</span>
@@ -953,6 +1117,7 @@ export function App() {
   const [page, setPage] = useState<Page>("start");
   const [results, setResults] = useState<QuizResult[]>(loadResults);
   const [annotations, setAnnotations] = useState<ChartAnnotation[]>(loadAnnotations);
+  const [certificationProgress, setCertificationProgress] = useState<CertificationProgress>(loadCertificationProgress);
   const [quizModel, setQuizModel] = useState<ModelKey | "all">("all");
   const [beginnerMode, setBeginnerMode] = useState(true);
   const stats = resultStats(results);
@@ -990,14 +1155,14 @@ export function App() {
           <button className="primary-button" onClick={() => setPage("today")}>Start Today <ChevronRight size={18} /></button>
         </header>
 
-        {page === "start" && <StartHere setPage={setPage} />}
+        {page === "start" && <StartHere setPage={setPage} certificationProgress={certificationProgress} />}
 
         {page === "about" && <AboutSystem setPage={setPage} />}
         {page === "phone" && <PhoneHelp setPage={setPage} />}
 
         {page === "today" && <TodayTraining setPage={setPage} results={results} setResults={setResults} startQuiz={startQuiz} />}
 
-        {page === "learn" && <LearnHub results={results} setPage={setPage} startQuiz={startQuiz} beginnerMode={beginnerMode} setBeginnerMode={setBeginnerMode} />}
+        {page === "learn" && <LearnHub results={results} setPage={setPage} startQuiz={startQuiz} beginnerMode={beginnerMode} setBeginnerMode={setBeginnerMode} certificationProgress={certificationProgress} setCertificationProgress={setCertificationProgress} />}
 
         {page === "progress" && (
           <div className="page-grid">

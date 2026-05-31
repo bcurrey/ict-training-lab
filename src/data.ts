@@ -1,4 +1,4 @@
-import type { Candle, ChartScenario, Difficulty, ICTModel, LearningPath, ModelKey, QuizQuestion } from "./types";
+import type { Candle, CertificationModule, CertificationQuizQuestion, ChartScenario, Difficulty, ICTModel, LearningPath, ModelKey, QuizQuestion } from "./types";
 
 export const modelOrder: ModelKey[] = [
   "MSS",
@@ -644,3 +644,273 @@ export const learningPaths: LearningPath[] = [
     lessons: ["MTF alignment", "Execution refinement", "Session models", "Continuation and failure conditions"]
   }
 ];
+
+export const certificationModules: CertificationModule[] = [
+  {
+    id: "liquidity",
+    title: "Liquidity",
+    level: "Foundation",
+    model: "Liquidity",
+    certification: "LIQUIDITY CERTIFIED",
+    videos: [
+      { id: "liq-ttrades-understanding", title: "Understanding Liquidity", creator: "TTrades", runtime: "18 min" },
+      { id: "liq-internal-external", title: "Internal vs External Liquidity", creator: "TTrades", runtime: "22 min" },
+      { id: "liq-ict-concepts", title: "ICT lesson on liquidity concepts", creator: "ICT", runtime: "35 min" },
+      { id: "liq-mss-grab", title: "Market Structure Shift vs Liquidity Grab", creator: "TTrades", runtime: "24 min" }
+    ],
+    chartDrillsRequired: 25,
+    replayRequired: 5,
+    examCharts: 50,
+    passingScore: 85,
+    examTopics: ["Mark buy side liquidity", "Mark sell side liquidity", "Identify equal highs", "Identify equal lows", "Has liquidity already been taken?", "Is this a raid or breakout?"],
+    description: "Learn where resting orders are likely to sit, how raids differ from continuation, and why liquidity alone is not a trade signal."
+  },
+  {
+    id: "displacement",
+    title: "Displacement",
+    level: "Foundation",
+    model: "MSS",
+    certification: "DISPLACEMENT CERTIFIED",
+    videos: [
+      { id: "disp-ttrades", title: "What is Displacement?", creator: "TTrades", runtime: "16 min" },
+      { id: "disp-ict", title: "ICT displacement lesson", creator: "ICT", runtime: "29 min" },
+      { id: "disp-library", title: "Displacement examples library", creator: "ICT Training Lab", runtime: "20 min" }
+    ],
+    chartDrillsRequired: 20,
+    replayRequired: 5,
+    examCharts: 40,
+    passingScore: 85,
+    examTopics: ["Is this displacement?", "Strong or weak displacement?", "Is it sufficient to support MSS?"],
+    description: "Train the difference between meaningful delivery and ordinary candle movement.",
+    unlockAfter: ["liquidity"]
+  },
+  {
+    id: "mss",
+    title: "Market Structure Shift",
+    level: "Foundation",
+    model: "MSS",
+    certification: "MSS CERTIFIED",
+    videos: [
+      { id: "mss-ttrades-concepts", title: "Market Structure Shift Concepts", creator: "TTrades", runtime: "28 min" },
+      { id: "mss-vs-grab", title: "MSS vs Liquidity Grab", creator: "TTrades", runtime: "24 min" },
+      { id: "mss-ict", title: "ICT MSS lesson", creator: "ICT", runtime: "42 min" },
+      { id: "mss-high-prob", title: "High Probability MSS examples", creator: "ICT Training Lab", runtime: "25 min" }
+    ],
+    chartDrillsRequired: 30,
+    replayRequired: 10,
+    examCharts: 50,
+    passingScore: 90,
+    examTopics: ["Mark MSS", "Explain why MSS exists", "Identify fake MSS", "Identify valid MSS", "MSS vs BOS"],
+    description: "Certify that you can identify valid structure shifts after liquidity and displacement.",
+    unlockAfter: ["displacement"]
+  },
+  {
+    id: "bos",
+    title: "Break of Structure",
+    level: "Foundation",
+    model: "BOS",
+    certification: "BOS CERTIFIED",
+    videos: [
+      { id: "bos-ict", title: "ICT BOS lesson", creator: "ICT", runtime: "31 min" },
+      { id: "bos-mss-comparison", title: "MSS vs BOS comparison module", creator: "ICT Training Lab", runtime: "18 min" },
+      { id: "bos-library", title: "BOS examples library", creator: "ICT Training Lab", runtime: "22 min" }
+    ],
+    chartDrillsRequired: 25,
+    replayRequired: 5,
+    examCharts: 40,
+    passingScore: 85,
+    examTopics: ["BOS or MSS?", "Continuation or reversal?", "Valid swing?"],
+    description: "Separate continuation structure from reversal structure and avoid forcing BOS labels.",
+    unlockAfter: ["mss"]
+  },
+  {
+    id: "fvg",
+    title: "Fair Value Gap",
+    level: "Foundation",
+    model: "FVG",
+    certification: "FVG CERTIFIED",
+    videos: [
+      { id: "fvg-ttrades", title: "Understanding Fair Value Gaps", creator: "TTrades", runtime: "26 min" },
+      { id: "fvg-simplified", title: "Fair Value Gap Simplified", creator: "ICT Training Lab", runtime: "19 min" },
+      { id: "fvg-ict", title: "ICT FVG lesson", creator: "ICT", runtime: "38 min" }
+    ],
+    chartDrillsRequired: 40,
+    replayRequired: 10,
+    examCharts: 75,
+    passingScore: 90,
+    examTopics: ["Valid FVG?", "High quality?", "Discount or premium?", "Tradeable?", "Weak FVG?"],
+    description: "Certify imbalance recognition, quality filtering, and context-aware FVG decisions.",
+    unlockAfter: ["bos"]
+  },
+  {
+    id: "ifvg",
+    title: "Inversion Fair Value Gap",
+    level: "Intermediate",
+    model: "IFVG",
+    certification: "IFVG CERTIFIED",
+    videos: [
+      { id: "ifvg-ttrades", title: "Inversion Fair Value Gaps", creator: "TTrades", runtime: "27 min" },
+      { id: "ifvg-trade", title: "How To Actually Trade IFVGs", creator: "TTrades", runtime: "31 min" }
+    ],
+    chartDrillsRequired: 30,
+    replayRequired: 8,
+    examCharts: 50,
+    passingScore: 88,
+    examTopics: ["Did the FVG invert?", "Was the original imbalance valid?", "Did retest respect the opposite side?"],
+    description: "Learn failed imbalance logic and when inversion is meaningful.",
+    unlockAfter: ["fvg"]
+  },
+  {
+    id: "bpr",
+    title: "Balanced Price Range",
+    level: "Intermediate",
+    model: "BPR",
+    certification: "BPR CERTIFIED",
+    videos: [{ id: "bpr-core", title: "Balanced Price Range certification lesson", creator: "ICT Training Lab", runtime: "24 min" }],
+    chartDrillsRequired: 25,
+    replayRequired: 6,
+    examCharts: 40,
+    passingScore: 88,
+    examTopics: ["Do opposing imbalances overlap?", "Where is the BPR?", "Was the range respected?"],
+    description: "Certify that you can locate the overlap, not just the full imbalance.",
+    unlockAfter: ["ifvg"]
+  },
+  {
+    id: "order-blocks",
+    title: "Order Blocks",
+    level: "Intermediate",
+    model: "OrderBlock",
+    certification: "ORDER BLOCKS CERTIFIED",
+    videos: [{ id: "ob-core", title: "Order Blocks certification lesson", creator: "ICT Training Lab", runtime: "32 min" }],
+    chartDrillsRequired: 35,
+    replayRequired: 8,
+    examCharts: 50,
+    passingScore: 88,
+    examTopics: ["Did this block cause displacement?", "Is the zone mitigated?", "Is the block too broad?"],
+    description: "Train order-block selection after displacement, not before confirmation.",
+    unlockAfter: ["bpr"]
+  },
+  {
+    id: "breaker-blocks",
+    title: "Breaker Blocks",
+    level: "Intermediate",
+    model: "Breaker",
+    certification: "BREAKER BLOCKS CERTIFIED",
+    videos: [{ id: "breaker-core", title: "Breaker Blocks certification lesson", creator: "ICT Training Lab", runtime: "34 min" }],
+    chartDrillsRequired: 35,
+    replayRequired: 8,
+    examCharts: 50,
+    passingScore: 88,
+    examTopics: ["Did the original block fail?", "Was protected structure broken?", "Did retest reject?"],
+    description: "Certify failed-block logic and avoid ordinary support/resistance labeling.",
+    unlockAfter: ["order-blocks"]
+  },
+  {
+    id: "premium-discount",
+    title: "Premium / Discount",
+    level: "Advanced",
+    model: "PremiumDiscount",
+    certification: "PREMIUM DISCOUNT CERTIFIED",
+    videos: [{ id: "pd-core", title: "Premium and Discount certification lesson", creator: "ICT Training Lab", runtime: "26 min" }],
+    chartDrillsRequired: 30,
+    replayRequired: 8,
+    examCharts: 45,
+    passingScore: 90,
+    examTopics: ["Correct dealing range?", "Favorable side of equilibrium?", "Does location support the idea?"],
+    description: "Train location quality and dealing-range discipline.",
+    unlockAfter: ["breaker-blocks"]
+  },
+  {
+    id: "sessions",
+    title: "Session Highs & Lows",
+    level: "Advanced",
+    model: "Sessions",
+    certification: "SESSIONS CERTIFIED",
+    videos: [{ id: "sessions-core", title: "Session Highs and Lows certification lesson", creator: "ICT Training Lab", runtime: "29 min" }],
+    chartDrillsRequired: 30,
+    replayRequired: 10,
+    examCharts: 45,
+    passingScore: 90,
+    examTopics: ["Which session high/low matters?", "Was liquidity raided in an active window?", "Was the level already used?"],
+    description: "Build session-aware liquidity recognition.",
+    unlockAfter: ["premium-discount"]
+  },
+  {
+    id: "mtf-alignment",
+    title: "Multi-Timeframe Alignment",
+    level: "Advanced",
+    model: "PremiumDiscount",
+    certification: "MTF ALIGNMENT CERTIFIED",
+    videos: [{ id: "mtf-core", title: "1H bias, 5m setup, 1m execution", creator: "ICT Training Lab", runtime: "35 min" }],
+    chartDrillsRequired: 35,
+    replayRequired: 10,
+    examCharts: 60,
+    passingScore: 90,
+    examTopics: ["Is HTF draw aligned?", "Would you execute the 1m setup?", "Is this counter-trend?"],
+    description: "Certify bias, setup, and execution alignment.",
+    unlockAfter: ["sessions"]
+  },
+  {
+    id: "trade-narrative",
+    title: "Full Trade Narrative",
+    level: "Advanced",
+    model: "FVG",
+    certification: "TRADE NARRATIVE CERTIFIED",
+    videos: [{ id: "narrative-core", title: "Full trade narrative certification lesson", creator: "ICT Training Lab", runtime: "42 min" }],
+    chartDrillsRequired: 40,
+    replayRequired: 12,
+    examCharts: 60,
+    passingScore: 90,
+    examTopics: ["Liquidity target", "MSS validity", "Displacement", "Entry", "Invalidation", "Target", "Take or pass?"],
+    description: "Train complete decision construction, not isolated pattern labeling.",
+    unlockAfter: ["mtf-alignment"]
+  },
+  {
+    id: "failure-recognition",
+    title: "Failure Recognition",
+    level: "Advanced",
+    certification: "FAILURE RECOGNITION CERTIFIED",
+    videos: [{ id: "failure-core", title: "Invalid setup and failure recognition certification", creator: "ICT Training Lab", runtime: "45 min" }],
+    chartDrillsRequired: 50,
+    replayRequired: 15,
+    examCharts: 75,
+    passingScore: 90,
+    examTopics: ["Fake MSS", "Weak displacement", "Poor liquidity sweeps", "Completed draw", "Weak FVG", "Bad execution location", "Invalid narratives"],
+    description: "The hardest specialist certification: identify why the setup should be rejected.",
+    unlockAfter: ["trade-narrative"]
+  },
+  {
+    id: "master",
+    title: "Master Trader Certification",
+    level: "Master",
+    certification: "ICT TRAINING LAB MASTER CERTIFIED",
+    videos: [{ id: "master-briefing", title: "Master certification briefing", creator: "ICT Training Lab", runtime: "15 min" }],
+    chartDrillsRequired: 100,
+    replayRequired: 25,
+    examCharts: 100,
+    passingScore: 90,
+    examTopics: ["Liquidity", "Displacement", "MSS", "BOS", "FVG", "Entry", "Invalidation", "Target", "Multi-timeframe narrative"],
+    description: "Final capstone: 100 mixed charts, hidden future candles, multiple timeframes, and narrative construction.",
+    unlockAfter: ["failure-recognition"]
+  }
+];
+
+export function certificationQuizFor(video: { id: string; title: string }, module: CertificationModule): CertificationQuizQuestion[] {
+  const topics = module.examTopics.length ? module.examTopics : [module.title];
+  return Array.from({ length: 10 }, (_, index) => {
+    const topic = topics[index % topics.length];
+    const correct = `Apply ${topic} using context, confirmation, and invalidation.`;
+    return {
+      id: `${video.id}-q-${index + 1}`,
+      prompt: `${module.title}: how should you interpret "${topic}" after studying ${video.title}?`,
+      choices: [
+        correct,
+        "Treat the pattern as a guaranteed trade signal.",
+        "Ignore timeframe alignment if the candle looks strong.",
+        "Label it valid before liquidity and displacement are checked."
+      ],
+      answer: correct,
+      explanation: `This checks application, not trivia. ${module.title} requires context, validation, and awareness of what would invalidate the read.`
+    };
+  });
+}

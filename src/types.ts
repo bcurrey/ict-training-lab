@@ -144,3 +144,45 @@ export interface LearningPath {
   unlockAccuracy: number;
   lessons: string[];
 }
+
+export type CertificationLevel = "Foundation" | "Intermediate" | "Advanced" | "Master";
+
+export interface VideoLesson {
+  id: string;
+  title: string;
+  creator: string;
+  runtime: string;
+}
+
+export interface CertificationQuizQuestion {
+  id: string;
+  prompt: string;
+  choices: string[];
+  answer: string;
+  explanation: string;
+}
+
+export interface CertificationModule {
+  id: string;
+  title: string;
+  level: CertificationLevel;
+  model?: ModelKey;
+  certification: string;
+  videos: VideoLesson[];
+  chartDrillsRequired: number;
+  replayRequired: number;
+  examCharts: number;
+  passingScore: number;
+  examTopics: string[];
+  description: string;
+  unlockAfter?: string[];
+}
+
+export interface CertificationProgress {
+  watchedVideos: Record<string, boolean>;
+  videoNotes: Record<string, string>;
+  quizScores: Record<string, number>;
+  chartDrills: Record<string, number>;
+  replayExercises: Record<string, number>;
+  examScores: Record<string, number>;
+}
