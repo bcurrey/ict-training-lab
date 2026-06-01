@@ -1102,6 +1102,19 @@ textarea {
   gap: 8px;
 }
 
+.quiz-chart-example {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 16px 0;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.quiz-chart-example .chart-canvas,
+.quiz-chart-example .image-chart img {
+  min-height: 260px;
+}
+
 .loop-visual {
   display: grid;
   grid-template-columns: 1fr;

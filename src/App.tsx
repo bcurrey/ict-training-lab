@@ -998,7 +998,6 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
   const [mode, setMode] = useState<QuizQuestion["mode"] | "mastery">(initialModel === "Liquidity" ? "mastery" : "multiple");
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [index, setIndex] = useState(0);
-  const [confidence, setConfidence] = useState<Confidence>("medium");
   const [feedback, setFeedback] = useState<{ result: QuizResult; question: QuizQuestion } | null>(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const filtered = useMemo(() => {
@@ -1006,11 +1005,12 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
     return pool.length ? pool : quizQuestions.filter((question) => mode === "mastery" || question.mode === mode);
   }, [quizFilter, mode, difficulty]);
   const question = filtered[index % filtered.length];
+  const quizScenario = chartScenarios.filter((scenario) => scenario.model === question.model && scenario.mode === (question.mode === "whyNot" ? "invalid" : "recognition"))[index % Math.max(1, chartScenarios.filter((scenario) => scenario.model === question.model && scenario.mode === (question.mode === "whyNot" ? "invalid" : "recognition")).length)] ?? chartScenarios.find((scenario) => scenario.model === question.model) ?? chartScenarios[0];
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   const answer = (choice: string) => {
     const correct = choice === question.answer;
-    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), confidence, elapsedMs: Date.now() - startedAt };
+    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), elapsedMs: Date.now() - startedAt };
     const next = [result, ...results];
     setResults(next);
     saveResults(next);
@@ -1018,7 +1018,6 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
   };
   const nextQuestion = () => {
     setFeedback(null);
-    setConfidence("medium");
     setStartedAt(Date.now());
     setIndex(index + 1);
   };
@@ -1035,11 +1034,11 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
         <select value={mode} onChange={(event) => setMode(event.target.value as QuizQuestion["mode"] | "mastery")}><option value="mastery">Mixed mastery</option><option value="multiple">Multiple choice</option><option value="valid">Valid / Invalid</option><option value="sequence">Sequence</option><option value="whyNot">Why Not</option></select>
         <select value={difficulty} onChange={(event) => setDifficulty(event.target.value === "all" ? "all" : Number(event.target.value) as Difficulty)}><option value="all">All levels</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option></select>
       </section>
-      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2><p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why correct is correct:</strong> {feedback.result.explanation}</p><p><strong>Why your answer is wrong:</strong> {feedback.result.result === "correct" ? "Your answer matches the required read. Keep checking context before treating it as actionable." : feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p><p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this setup"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><p><strong>Confidence calibration:</strong> {feedback.result.confidence === "high" && feedback.result.result === "incorrect" ? "High-confidence miss. This should be reviewed before adding more advanced concepts." : `${feedback.result.confidence} confidence recorded.`}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
+      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2><div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts /></div><p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why this answer is correct:</strong> {feedback.result.explanation}</p>{feedback.result.result === "incorrect" && <p><strong>Why your answer is wrong:</strong> {feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p>}<p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this setup"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
         <section className="quiz-card">
           <div className="quiz-meta"><span>{modelLabels[question.model]} - {question.mode}</span><DifficultyBadge level={question.difficulty} /></div>
           <h2>{question.prompt}</h2>
-          <div className="quiz-confidence"><label>How sure are you?</label><ConfidencePicker value={confidence} onChange={setConfidence} /></div>
+          <div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts={false} /></div>
           <div className="choice-grid">{(question.choices ?? question.sequence ?? []).map((choice) => <button key={choice} onClick={() => answer(choice)}>{choice}</button>)}</div>
           <p className="empty">Answer before looking anything up. This is pattern-recognition training, not signal generation.</p>
         </section>
