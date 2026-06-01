@@ -94,6 +94,14 @@ const modeHelp: Record<string, string> = {
   today: "Use this when you want the app to tell you exactly what to do next."
 };
 
+const liquidityModuleId = "liquidity";
+const foundationModuleIds = ["liquidity", "displacement", "mss", "bos", "fvg"];
+const liquidityDrills = chartScenarios.filter((scenario) => scenario.mode === "recognition" && scenario.model === "Liquidity");
+
+function getCertificationModule(id: string) {
+  return certificationModules.find((module) => module.id === id) ?? certificationModules[0];
+}
+
 function todayIso() {
   return new Date().toISOString();
 }
@@ -513,11 +521,20 @@ function ProgressSummary({ results }: { results: QuizResult[] }) {
 
 function CertificationTracker({ progress, setPage }: { progress: CertificationProgress; setPage: (page: Page) => void }) {
   const overview = certificationOverview(progress);
+  const liquidity = moduleStats(getCertificationModule(liquidityModuleId), progress);
   return (
     <section className="panel certification-tracker">
       <div className="section-title">
         <div><span>Certification Tracker</span><h2>{overview.level} Level</h2></div>
-        <button className="primary-button" onClick={() => setPage("learn")}>Open Certification Path</button>
+        <button className="primary-button" onClick={() => setPage("learn")}>{liquidity.certified ? "Open Certification Path" : "Continue Liquidity"}</button>
+      </div>
+      <div className="mvp-focus-card">
+        <div>
+          <span>Current MVP focus</span>
+          <strong>Earn Liquidity Certification first</strong>
+          <p>Everything starts here: identify buy-side and sell-side liquidity, separate raids from breakouts, then use review to correct misses.</p>
+        </div>
+        <b>{liquidity.completion}%</b>
       </div>
       <div className="cert-summary">
         <div><strong>{overview.overall}%</strong><span>overall completion</span></div>
@@ -1053,26 +1070,31 @@ const recommendedPath = [
 ];
 
 function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) => void; certificationProgress: CertificationProgress }) {
+  const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
   return (
     <div className="page-grid">
       <CertificationTracker progress={certificationProgress} setPage={setPage} />
       <section className="panel start-panel">
         <div>
-          <span>First session</span>
-          <h2>Use this app as a deliberate-practice trainer, not a signal tool.</h2>
-          <p>Start with liquidity and structure, do a short chart drill, then review anything missed. The goal is to recognize valid and invalid ICT models faster, with less hindsight bias.</p>
-          <div className="action-row"><button className="primary-button" onClick={() => setPage("today")}>Start Today's Training</button><button className="ghost-button" onClick={() => setPage("about")}>About this system</button><button className="ghost-button" onClick={() => setPage("phone")}>Use on Phone</button></div>
+          <span>Week 1 mission</span>
+          <h2>Earn Liquidity Certification before studying anything advanced.</h2>
+          <p>The MVP path is intentionally narrow: learn liquidity, mark real chart-style drills, step through one replay, review misses, and only then move to displacement and structure.</p>
+          <div className="start-mission">
+            <div><strong>{liquidity.completion}%</strong><span>Liquidity certification progress</span></div>
+            <p>Unlock target: watch 4 videos, pass 4 quizzes at 80%+, complete 25 chart drills, complete 5 replays, then pass the 50-chart exam at 85%.</p>
+          </div>
+          <div className="action-row"><button className="primary-button" onClick={() => setPage("today")}>Start First Session</button><button className="ghost-button" onClick={() => setPage("learn")}>Open Liquidity Module</button><button className="ghost-button" onClick={() => setPage("about")}>About this system</button></div>
         </div>
         <ChartPreview scenario={chartScenarios[0]} showCallouts />
       </section>
       <section className="panel">
-        <div className="section-title"><div><span>How to use it</span><h2>One simple loop</h2></div></div>
+        <div className="section-title"><div><span>How to use it</span><h2>The only loop that matters right now</h2></div></div>
         <div className="onboarding-grid">
           {[
-            ["1. Learn", "Read the model checklist and know what validates or invalidates the concept."],
-            ["2. Drill", "Use chart drills to mark the setup before seeing trainer markup."],
-            ["3. Replay", "Step forward candle by candle so you train recognition without future information."],
-            ["4. Review", "Repeat missed questions and track weak models."]
+            ["1. Learn Liquidity", "Know buy-side, sell-side, equal highs/lows, raids, and why a sweep alone is not a setup."],
+            ["2. Drill Charts", "Mark the specific liquidity pool or sweep before seeing trainer markup."],
+            ["3. Replay One Sequence", "Step forward candle by candle so you do not learn only from hindsight."],
+            ["4. Review Misses", "Redo incorrect answers and overconfident mistakes until the pattern gets cleaner."]
           ].map(([title, copy]) => <article key={title}><strong>{title}</strong><p>{copy}</p></article>)}
         </div>
       </section>
@@ -1080,8 +1102,8 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
         <div className="section-title"><div><span>Tabs explained</span><h2>What each section is for</h2></div></div>
         <div className="mode-list">
           <p><strong>Today:</strong> the exact next routine to run.</p>
-          <p><strong>Learn:</strong> model library, learning path, MTF, Narrative, and Spot the Flaw.</p>
-          <p><strong>Chart Drills:</strong> chart-based recognition reps with annotation tools.</p>
+          <p><strong>Learn:</strong> Liquidity certification first; later modules stay visible as a roadmap.</p>
+          <p><strong>Chart Drills:</strong> foundation recognition reps with annotation tools.</p>
           <p><strong>Replay:</strong> hidden future candles for real-time recognition practice.</p>
           <p><strong>Review:</strong> missed questions and spaced repetition.</p>
           <p><strong>Progress:</strong> accuracy, XP, confidence patterns, weak models, and saved work.</p>
@@ -1092,22 +1114,25 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
   );
 }
 
-function TodayTraining({ setPage, results, setResults, startQuiz }: { setPage: (page: Page) => void; results: QuizResult[]; setResults: (results: QuizResult[]) => void; startQuiz: (model?: ModelKey) => void }) {
+function TodayTraining({ setPage, results, setResults, startQuiz, certificationProgress }: { setPage: (page: Page) => void; results: QuizResult[]; setResults: (results: QuizResult[]) => void; startQuiz: (model?: ModelKey) => void; certificationProgress: CertificationProgress }) {
   const [active, setActive] = useState(false);
   const [step, setStep] = useState(0);
+  const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
+  const liquidityResults = results.filter((result) => result.model === "Liquidity");
+  const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   const steps = ["Study", "Chart drills", "Replay", "Review", "Summary"];
   if (active) {
     return (
       <div className="page-grid guided-session">
         <section className="panel">
-          <div className="section-title"><div><span>Guided session</span><h2>{steps[step]}</h2></div><button className="ghost-button" onClick={() => setActive(false)}>Exit session</button></div>
+          <div className="section-title"><div><span>Liquidity certification session</span><h2>{steps[step]}</h2></div><button className="ghost-button" onClick={() => setActive(false)}>Exit session</button></div>
           <div className="session-progress">{steps.map((item, index) => <span className={cls(index <= step && "active")} key={item}>{index + 1}. {item}</span>)}</div>
         </section>
-        {step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Foundation concept</span><h2>Liquidity Sweeps</h2></div></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. Look for an obvious liquidity pool, raid, rejection, displacement, and structure confirmation.</p></div></section>}
-        {step === 1 && <ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && ["Liquidity", "MSS", "BOS", "FVG"].includes(scenario.model)).slice(0, 10)} results={results} setResults={setResults} />}
+        {step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Foundation concept</span><h2>Liquidity Sweeps</h2></div><button className="ghost-button" onClick={() => setPage("learn")}>Open module</button></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div></section>}
+        {step === 1 && <ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} />}
         {step === 2 && <ReplayMode results={results} setResults={setResults} />}
         {step === 3 && <ReviewQueue results={results} onPractice={startQuiz} />}
-        {step === 4 && <section className="panel"><div className="section-title"><div><span>Session summary</span><h2>Training complete</h2></div></div><ProgressSummary results={results} /><div className="answer-panel"><strong>Next best rep</strong><p>Repeat any missed Liquidity, MSS, BOS, or FVG examples before moving into IFVG, BPR, order blocks, or breakers.</p></div></section>}
+        {step === 4 && <section className="panel"><div className="section-title"><div><span>Session summary</span><h2>Training complete</h2></div></div><ProgressSummary results={results} /><div className="score-grid"><span><strong>Liquidity attempts</strong><b>{liquidityResults.length}</b></span><span><strong>Liquidity accuracy</strong><b>{liquidityAccuracy}%</b></span><span><strong>Certification progress</strong><b>{liquidity.completion}%</b></span></div><div className="answer-panel"><strong>Next best rep</strong><p>{liquidity.certified ? "Liquidity is certified. Move to Displacement only after reviewing any high-confidence misses." : "Repeat Liquidity drills until you can identify the pool, raid, and invalidation without guessing."}</p></div></section>}
         <div className="action-row"><button className="ghost-button" onClick={() => setStep(Math.max(0, step - 1))}>Back</button><button className="primary-button" onClick={() => step >= steps.length - 1 ? setActive(false) : setStep(step + 1)}>{step >= steps.length - 1 ? "Finish" : "Next step"}</button></div>
       </div>
     );
@@ -1116,11 +1141,15 @@ function TodayTraining({ setPage, results, setResults, startQuiz }: { setPage: (
     <div className="page-grid">
       <ModeHelp id="today" />
       <section className="panel">
-        <div className="section-title"><div><span>Today's Training</span><h2>Recommended sequence</h2></div><button className="primary-button" onClick={() => { setActive(true); setStep(0); }}>Start Today's Training</button></div>
+        <div className="section-title"><div><span>Today's Training</span><h2>Liquidity certification session</h2></div><button className="primary-button" onClick={() => { setActive(true); setStep(0); }}>Start Today's Training</button></div>
+        <div className="mvp-focus-card compact">
+          <div><span>Do this before anything else</span><strong>Complete one Liquidity recognition loop</strong><p>Study for five minutes, mark ten charts, replay one sequence, then review misses.</p></div>
+          <b>{liquidity.completion}%</b>
+        </div>
         <div className="today-list">
           <article><b>1</b><div><strong>Study: Liquidity Sweeps - 5 minutes</strong><p>Review what creates a meaningful liquidity pool and what confirms the sweep.</p></div></article>
-          <article><b>2</b><div><strong>Drill: 10 chart examples</strong><p>Mark liquidity, MSS/BOS, FVG, entry, and invalidation where applicable.</p></div></article>
-          <article><b>3</b><div><strong>Replay: 1 sequence</strong><p>Step forward before revealing future candles.</p></div></article>
+          <article><b>2</b><div><strong>Drill: 10 liquidity chart examples</strong><p>Mark buy-side liquidity, sell-side liquidity, equal highs/lows, raids, and invalidation.</p></div></article>
+          <article><b>3</b><div><strong>Replay: 1 liquidity sequence</strong><p>Step forward before revealing future candles.</p></div></article>
           <article><b>4</b><div><strong>Review: missed questions</strong><p>Repeat anything due or incorrect.</p></div></article>
         </div>
       </section>
@@ -1216,22 +1245,41 @@ function ModuleCard({ module, progress, setProgress }: { module: CertificationMo
 
 function CertificationPath({ progress, setProgress }: { progress: CertificationProgress; setProgress: (progress: CertificationProgress) => void }) {
   const overview = certificationOverview(progress);
+  const liquidity = getCertificationModule(liquidityModuleId);
+  const foundation = certificationModules.filter((module) => foundationModuleIds.includes(module.id) && module.id !== liquidityModuleId);
+  const later = certificationModules.filter((module) => !foundationModuleIds.includes(module.id));
   return (
     <div className="page-grid">
       <CertificationTracker progress={progress} setPage={() => undefined} />
       <section className="panel">
-        <div className="section-title"><div><span>Certification Philosophy</span><h2>Watching videos does not equal mastery</h2></div></div>
+        <div className="section-title"><div><span>Focused MVP</span><h2>Liquidity is the first certification gate</h2></div></div>
         <div className="mode-list">
-          <p><strong>1. Curated Videos:</strong> mark watched and take notes.</p>
-          <p><strong>2. Knowledge Checks:</strong> each video has a 10-question application quiz.</p>
-          <p><strong>3. Chart Drills:</strong> prove recognition through examples.</p>
-          <p><strong>4. Replay:</strong> train without hindsight.</p>
-          <p><strong>5. Final Exam:</strong> locked until module work is complete.</p>
-          <p><strong>Next:</strong> {overview.next.title}</p>
+          <p><strong>1. Watch:</strong> mark Liquidity videos watched and write timestamp notes.</p>
+          <p><strong>2. Check:</strong> pass each video quiz at 80%+ before counting it complete.</p>
+          <p><strong>3. Drill:</strong> complete 25 chart reps focused only on liquidity recognition.</p>
+          <p><strong>4. Replay:</strong> complete 5 hidden-future liquidity sequences.</p>
+          <p><strong>5. Certify:</strong> pass the Liquidity final at 85% before moving to Displacement.</p>
+          <p><strong>Current next step:</strong> {overview.next.title}</p>
         </div>
       </section>
       <div className="lms-stack">
-        {certificationModules.map((module) => <ModuleCard key={module.id} module={module} progress={progress} setProgress={setProgress} />)}
+        <ModuleCard key={liquidity.id} module={liquidity} progress={progress} setProgress={setProgress} />
+        <section className="panel roadmap-panel">
+          <div className="section-title"><div><span>Next foundation modules</span><h2>Locked until Liquidity is certified</h2></div></div>
+          <div className="roadmap-list">
+            {foundation.map((module) => {
+              const stats = moduleStats(module, progress);
+              const unlocked = moduleUnlocked(module, progress);
+              return <article className={cls(unlocked && "ready")} key={module.id}><div><strong>{module.title}</strong><p>{module.description}</p></div><span>{stats.certified ? module.certification : unlocked ? "Ready after current gate" : "Locked"}</span></article>;
+            })}
+          </div>
+        </section>
+        <section className="panel roadmap-panel muted-roadmap">
+          <div className="section-title"><div><span>Later roadmap</span><h2>Kept out of the week-1 workflow</h2></div></div>
+          <div className="roadmap-list compact-roadmap">
+            {later.map((module) => <article key={module.id}><div><strong>{module.title}</strong><p>{module.level}</p></div><span>{module.certification}</span></article>)}
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -1239,9 +1287,22 @@ function CertificationPath({ progress, setProgress }: { progress: CertificationP
 
 function LearnHub({ results, setPage, startQuiz, beginnerMode, setBeginnerMode, certificationProgress, setCertificationProgress }: { results: QuizResult[]; setPage: (page: Page) => void; startQuiz: (model?: ModelKey) => void; beginnerMode: boolean; setBeginnerMode: (value: boolean) => void; certificationProgress: CertificationProgress; setCertificationProgress: (progress: CertificationProgress) => void }) {
   const gates = phaseStatus(results);
+  const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
   return (
     <div className="page-grid">
       <ModeHelp id="learn" />
+      <section className="panel learn-focus">
+        <div>
+          <span>Recommended first certification</span>
+          <h2>Liquidity first. Everything else depends on where resting orders are likely to sit.</h2>
+          <p>This page is now a certification path, not a content library. The week-1 goal is to finish the Liquidity loop, then unlock Displacement.</p>
+        </div>
+        <div className="learn-focus-meter">
+          <strong>{liquidity.completion}%</strong>
+          <span>Liquidity complete</span>
+          <button className="primary-button" onClick={() => setPage("today")}>Run Today's Session</button>
+        </div>
+      </section>
       <CertificationPath progress={certificationProgress} setProgress={setCertificationProgress} />
       <section className="panel beginner-card">
         <div>
@@ -1367,13 +1428,13 @@ export function App() {
         {page === "about" && <AboutSystem setPage={setPage} />}
         {page === "phone" && <PhoneHelp setPage={setPage} />}
 
-        {page === "today" && <TodayTraining setPage={setPage} results={results} setResults={setResults} startQuiz={startQuiz} />}
+        {page === "today" && <TodayTraining setPage={setPage} results={results} setResults={setResults} startQuiz={startQuiz} certificationProgress={certificationProgress} />}
 
         {page === "learn" && <LearnHub results={results} setPage={setPage} startQuiz={startQuiz} beginnerMode={beginnerMode} setBeginnerMode={setBeginnerMode} certificationProgress={certificationProgress} setCertificationProgress={setCertificationProgress} />}
 
         {page === "progress" && <ProgressEnhancements results={results} progress={certificationProgress} bookmarks={bookmarks} />}
 
-        {page === "chartLab" && <><ModeHelp id="chartLab" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && (!beginnerMode || phaseStatus(results).foundationPassed || ["Liquidity", "MSS", "BOS", "FVG"].includes(scenario.model)))} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
+        {page === "chartLab" && <><ModeHelp id="chartLab" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && (!beginnerMode || phaseStatus(results).foundationPassed || scenario.model === "Liquidity"))} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
         {page === "replay" && <><ModeHelp id="replay" /><ReplayMode results={results} setResults={setResults} /></>}
         {page === "flaw" && <><ModeHelp id="flaw" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "invalid")} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
         {page === "mtf" && <div className="page-grid"><ModeHelp id="mtf" /><MtfPanels /><MtfMode results={results} setResults={setResults} /></div>}

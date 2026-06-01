@@ -762,6 +762,96 @@ textarea {
   gap: 14px;
 }
 
+.mvp-focus-card,
+.start-mission,
+.learn-focus,
+.roadmap-list article {
+  border: 1px solid rgba(67, 240, 164, 0.24);
+  background: linear-gradient(135deg, rgba(67, 240, 164, 0.1), rgba(68, 214, 255, 0.045));
+  border-radius: 8px;
+}
+
+.mvp-focus-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+}
+
+.mvp-focus-card.compact {
+  margin-bottom: 14px;
+}
+
+.mvp-focus-card span,
+.learn-focus span,
+.start-mission span {
+  color: var(--cyan);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.mvp-focus-card strong,
+.start-mission strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+}
+
+.mvp-focus-card p,
+.start-mission p,
+.learn-focus p,
+.roadmap-list p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.mvp-focus-card b {
+  color: var(--green);
+  font-size: 2rem;
+}
+
+.start-mission {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  margin: 16px 0;
+}
+
+.start-mission strong {
+  color: var(--green);
+  font-size: 1.9rem;
+}
+
+.learn-focus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+}
+
+.learn-focus h2,
+.learn-focus-meter strong {
+  margin: 0;
+}
+
+.learn-focus-meter {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  display: grid;
+  gap: 8px;
+}
+
+.learn-focus-meter strong {
+  color: var(--green);
+  font-size: 2.2rem;
+}
+
 .cert-summary {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
@@ -800,6 +890,43 @@ textarea {
 .video-list {
   display: grid;
   gap: 10px;
+}
+
+.roadmap-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.roadmap-list {
+  display: grid;
+  gap: 10px;
+}
+
+.roadmap-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+}
+
+.roadmap-list article.ready {
+  border-color: rgba(67, 240, 164, 0.5);
+}
+
+.roadmap-list span {
+  color: var(--green);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.muted-roadmap {
+  opacity: 0.78;
+}
+
+.compact-roadmap {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .cert-row {
@@ -1663,7 +1790,11 @@ textarea {
   .requirement-grid,
   .trainer-compare,
   .score-grid,
-  .precheck {
+  .precheck,
+  .mvp-focus-card,
+  .learn-focus,
+  .roadmap-list article,
+  .compact-roadmap {
     grid-template-columns: 1fr;
   }
   .module-score {
