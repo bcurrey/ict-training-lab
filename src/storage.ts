@@ -37,6 +37,8 @@ export function saveAnnotations(annotations: ChartAnnotation[]) {
 export function loadCertificationProgress(): CertificationProgress {
   return read<CertificationProgress>(certificationKey, {
     watchedVideos: {},
+    videoStatus: {},
+    videoCompletedAt: {},
     videoNotes: {},
     quizScores: {},
     chartDrills: {},

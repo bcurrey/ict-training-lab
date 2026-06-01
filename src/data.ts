@@ -891,10 +891,42 @@ export const certificationModules: CertificationModule[] = [
     model: "Liquidity",
     certification: "LIQUIDITY CERTIFIED",
     videos: [
-      { id: "liq-ttrades-understanding", title: "Understanding Liquidity", creator: "TTrades", runtime: "18 min" },
-      { id: "liq-internal-external", title: "Internal vs External Liquidity", creator: "TTrades", runtime: "22 min" },
-      { id: "liq-ict-concepts", title: "ICT lesson on liquidity concepts", creator: "ICT", runtime: "35 min" },
-      { id: "liq-mss-grab", title: "Market Structure Shift vs Liquidity Grab", creator: "TTrades", runtime: "24 min" }
+      {
+        id: "liq-ict-understanding",
+        title: "Understanding Liquidity",
+        creator: "ICT",
+        runtime: "35 min",
+        url: "https://www.youtube.com/results?search_query=ICT+Understanding+Liquidity",
+        concepts: ["buy-side liquidity", "sell-side liquidity", "equal highs", "equal lows", "why price seeks liquidity"],
+        whyRequired: "This video establishes liquidity as the first map-reading skill: where resting orders are likely to sit before any setup can be judged."
+      },
+      {
+        id: "liq-dodgy-sweep-breakout",
+        title: "Liquidity Sweep vs Breakout",
+        creator: "Dodgy's DD",
+        runtime: "22 min",
+        url: "https://www.youtube.com/results?search_query=Dodgy%27s+DD+Liquidity+Sweep+vs+Breakout",
+        concepts: ["sweep vs breakout", "trader traps", "acceptance vs rejection", "confirmation requirements"],
+        whyRequired: "This video teaches the difference between liquidity sweeps and true breakouts. This distinction is required before attempting liquidity chart drills."
+      },
+      {
+        id: "liq-ict-internal-external",
+        title: "External Range Liquidity and Internal Range Liquidity",
+        creator: "ICT",
+        runtime: "40 min",
+        url: "https://www.youtube.com/results?search_query=ICT+External+Range+Liquidity+Internal+Range+Liquidity",
+        concepts: ["external liquidity", "internal liquidity", "draw on liquidity", "dealing range context"],
+        whyRequired: "This video connects liquidity pools to draw-on-liquidity logic so you do not treat every equal high or low as equally important."
+      },
+      {
+        id: "liq-ttrades-real-charts",
+        title: "Liquidity Explained Using Real Charts",
+        creator: "TTrades",
+        runtime: "24 min",
+        url: "https://www.youtube.com/results?search_query=TTrades+Liquidity+Explained+Using+Real+Charts",
+        concepts: ["practical examples", "chart recognition", "pattern repetition", "valid vs weak sweeps"],
+        whyRequired: "This video bridges theory into chart recognition, preparing you for the drill and replay portions of Liquidity certification."
+      }
     ],
     chartDrillsRequired: 25,
     replayRequired: 5,

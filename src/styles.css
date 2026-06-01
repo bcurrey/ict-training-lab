@@ -623,6 +623,10 @@ textarea {
   align-items: center;
 }
 
+.simple-start {
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+}
+
 .start-panel span {
   color: var(--cyan);
   text-transform: uppercase;
@@ -825,6 +829,11 @@ textarea {
   font-size: 1.9rem;
 }
 
+.solo-action {
+  width: min(320px, 100%);
+  justify-content: center;
+}
+
 .learn-focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 210px;
@@ -1015,6 +1024,31 @@ textarea {
   padding: 12px;
   display: grid;
   gap: 9px;
+}
+
+.video-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.video-card-head div {
+  display: grid;
+  gap: 4px;
+}
+
+.video-card-head span {
+  color: var(--cyan);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.video-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .video-card label {
@@ -1252,6 +1286,32 @@ textarea {
 .session-progress span.active {
   color: #06120f;
   background: var(--green);
+}
+
+.session-progress span.done {
+  border-color: rgba(67, 240, 164, 0.4);
+  color: var(--green);
+}
+
+.step-ready {
+  border: 1px solid rgba(67, 240, 164, 0.24);
+  border-radius: 8px;
+  background: rgba(67, 240, 164, 0.07);
+  padding: 16px;
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.step-ready p {
+  color: var(--muted);
+  margin: 0;
+}
+
+details summary {
+  cursor: pointer;
+  color: var(--text);
+  margin-bottom: 12px;
 }
 
 .phase-card ol {
@@ -1816,6 +1876,9 @@ textarea {
   }
   .beginner-card {
     align-items: stretch;
+    flex-direction: column;
+  }
+  .video-card-head {
     flex-direction: column;
   }
   .gate-grid {

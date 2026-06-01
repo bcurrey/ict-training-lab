@@ -155,6 +155,9 @@ export interface VideoLesson {
   title: string;
   creator: string;
   runtime: string;
+  url?: string;
+  concepts?: string[];
+  whyRequired?: string;
 }
 
 export interface CertificationQuizQuestion {
@@ -183,6 +186,8 @@ export interface CertificationModule {
 
 export interface CertificationProgress {
   watchedVideos: Record<string, boolean>;
+  videoStatus: Record<string, "not-started" | "in-progress" | "completed">;
+  videoCompletedAt: Record<string, string>;
   videoNotes: Record<string, string>;
   quizScores: Record<string, number>;
   chartDrills: Record<string, number>;
