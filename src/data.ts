@@ -231,7 +231,245 @@ function validInvalidForModel(model: ICTModel, index: number): QuizQuestion {
   };
 }
 
+function liquidityQuestion(id: string, mode: QuizQuestion["mode"], difficulty: Difficulty, prompt: string, choices: string[], answer: string, explanation: string, concept: string, mistakePrevented: string, wrongAnswers: Record<string, string> = {}): QuizQuestion {
+  return {
+    id,
+    mode,
+    model: "Liquidity",
+    difficulty,
+    prompt,
+    choices,
+    answer,
+    explanation,
+    concept,
+    mistakePrevented,
+    wrongAnswers
+  };
+}
+
+export const liquidityMasteryQuestions: QuizQuestion[] = [
+  liquidityQuestion(
+    "liq-master-1",
+    "multiple",
+    1,
+    "Price forms three nearly equal highs during the New York morning, then trades a few ticks above them and rejects. What was most likely targeted?",
+    ["Buy-side liquidity", "Sell-side liquidity", "A bullish FVG", "Premium equilibrium"],
+    "Buy-side liquidity",
+    "Equal highs are an obvious pool of buy stops. A run above them is a buy-side liquidity raid, but it still needs rejection and displacement before it supports a directional idea.",
+    "Buy-side vs sell-side liquidity recognition",
+    "Calling every high a breakout without asking who was trapped.",
+    {
+      "Sell-side liquidity": "Sell-side liquidity rests below lows, not above equal highs.",
+      "A bullish FVG": "An FVG is an imbalance, not the resting stop pool being targeted.",
+      "Premium equilibrium": "Premium/discount can matter later, but the question asks what liquidity was targeted."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-2",
+    "multiple",
+    1,
+    "Price trades below a clean double bottom, immediately closes back inside the range, and then expands higher. What is the cleanest label for the first move below the lows?",
+    ["Sell-side liquidity sweep", "Break of Structure", "Buy-side liquidity sweep", "Balanced Price Range"],
+    "Sell-side liquidity sweep",
+    "Stops below equal lows are sell-side liquidity. The move below them is the raid; the rejection and expansion are separate confirmation clues.",
+    "Sell-side liquidity sweep mechanics",
+    "Mistaking a raid below lows for bearish continuation too quickly.",
+    {
+      "Break of Structure": "A BOS requires a valid structural swing break, not just a raid through lows.",
+      "Buy-side liquidity sweep": "Buy-side liquidity sits above highs.",
+      "Balanced Price Range": "A BPR requires overlapping opposing imbalances."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-3",
+    "valid",
+    2,
+    "A wick takes the previous session high by one tick, but price keeps grinding upward with no rejection or displacement away. Does this qualify as a completed liquidity sweep setup?",
+    ["Valid", "Invalid"],
+    "Invalid",
+    "The liquidity may have been touched, but the setup is not completed. Without rejection or displacement away, it may simply be continuation through the level.",
+    "Sweep validation vs simple liquidity touch",
+    "Calling a one-tick probe a full reversal setup.",
+    {
+      Valid: "Valid is too aggressive because the follow-through confirming rejection is missing."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-4",
+    "valid",
+    2,
+    "Price raids sell-side liquidity below equal lows, quickly returns above the level, then breaks a minor bullish swing with displacement. Does this meet the basic liquidity-sweep study conditions?",
+    ["Valid", "Invalid"],
+    "Valid",
+    "The sequence has an obvious pool, a raid, rejection, and displacement. It is still only a study condition, not a guaranteed trade.",
+    "Minimum liquidity sweep validation",
+    "Waiting for perfection while missing the core mechanical sequence.",
+    {
+      Invalid: "Invalid would make sense if the pool was unclear or displacement never appeared."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-5",
+    "whyNot",
+    3,
+    "A trader marks a bullish liquidity sweep, but the low taken was not obvious and there were no equal lows, session lows, or prior swing lows nearby. Why should this be rejected?",
+    ["Level was not meaningful", "FVG already filled", "Buy-side liquidity was swept", "Too much displacement"],
+    "Level was not meaningful",
+    "Liquidity training starts with obviousness. If the pool was not meaningful to many participants, the sweep label is weak.",
+    "Liquidity pool quality",
+    "Forcing liquidity labels onto random minor lows.",
+    {
+      "FVG already filled": "That may invalidate an imbalance, but this flaw is about the liquidity pool itself.",
+      "Buy-side liquidity was swept": "The prompt describes a bullish idea below lows, which would involve sell-side liquidity.",
+      "Too much displacement": "Displacement is not the stated problem; the pool quality is."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-6",
+    "whyNot",
+    3,
+    "Price sweeps a prior high after the higher-timeframe draw has already been reached, then stalls in chop. What weakens the short idea most?",
+    ["HTF draw already reached", "No equal lows", "FVG is too clean", "The raid happened above a high"],
+    "HTF draw already reached",
+    "If the larger draw has already been satisfied, the context may be exhausted. Liquidity alone does not create a fresh trade narrative.",
+    "Liquidity in higher-timeframe context",
+    "Taking a late sweep after the main objective is already complete.",
+    {
+      "No equal lows": "Equal lows are not the issue in a raid above highs.",
+      "FVG is too clean": "A clean FVG is not the stated flaw.",
+      "The raid happened above a high": "A raid above a high is normal for buy-side liquidity."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-7",
+    "sequence",
+    2,
+    "Choose the best order for studying a bullish liquidity-sweep reversal.",
+    [
+      "Mark sell-side liquidity > wait for raid > look for rejection > require displacement > study entry/invalidation",
+      "Enter long > find liquidity later > ignore displacement > move stop after entry",
+      "Mark FVG > assume liquidity was swept > enter before raid > hope for MSS",
+      "Wait for target > mark liquidity > ignore context > call it valid"
+    ],
+    "Mark sell-side liquidity > wait for raid > look for rejection > require displacement > study entry/invalidation",
+    "The order matters: pool first, raid second, rejection and displacement third, execution planning last.",
+    "Liquidity sweep decision sequence",
+    "Entering before the market proves the raid mattered."
+  ),
+  liquidityQuestion(
+    "liq-master-8",
+    "sequence",
+    2,
+    "Choose the best order for rejecting a fake liquidity sweep.",
+    [
+      "Check if pool was obvious > check raid > check rejection > reject if price continues with no displacement away",
+      "See wick > enter reversal > label MSS later > ignore invalidation",
+      "Find any candle high > call it liquidity > remove stop > wait",
+      "Start with target > skip pool quality > call it certified"
+    ],
+    "Check if pool was obvious > check raid > check rejection > reject if price continues with no displacement away",
+    "A fake or weak sweep often fails the obvious-pool, rejection, or displacement checks.",
+    "Invalid sweep filtering",
+    "Letting a wick through a level replace the full validation process."
+  ),
+  liquidityQuestion(
+    "liq-master-9",
+    "multiple",
+    3,
+    "What is the most important difference between a liquidity raid and a breakout?",
+    ["A raid takes liquidity and rejects; a breakout accepts beyond the level", "A raid always reverses the full day", "A breakout always fails", "There is no difference"],
+    "A raid takes liquidity and rejects; a breakout accepts beyond the level",
+    "The distinction is acceptance versus rejection. A raid through liquidity is not enough by itself; behavior after the level matters.",
+    "Raid vs breakout interpretation",
+    "Shorting every move above equal highs without evidence of rejection.",
+    {
+      "A raid always reverses the full day": "Raids can fail or only cause short-term reactions.",
+      "A breakout always fails": "Breakouts can continue when price accepts beyond the level.",
+      "There is no difference": "The post-level behavior is the difference."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-10",
+    "multiple",
+    4,
+    "Fast recognition: equal lows sit below price, price runs below them, reclaims the level, then creates bullish displacement. What should you be thinking?",
+    ["Possible sell-side raid that needs full context and risk definition", "Guaranteed long signal", "Confirmed bearish BOS only", "Ignore it because all sweeps fail"],
+    "Possible sell-side raid that needs full context and risk definition",
+    "This is the correct training frame: identify the raid and confirmation clues, then still require context and risk definition.",
+    "Rapid liquidity recognition with restraint",
+    "Jumping from recognition straight into a signal.",
+    {
+      "Guaranteed long signal": "No single ICT model is a guaranteed signal.",
+      "Confirmed bearish BOS only": "The reclaim and bullish displacement argue against labeling only bearish continuation.",
+      "Ignore it because all sweeps fail": "Sweeps can matter, but only with confirmation and context."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-11",
+    "valid",
+    4,
+    "Price wicks above Asia high during New York, immediately closes back below, then forms a lower low with strong displacement. Is the bearish liquidity-sweep idea mechanically reasonable?",
+    ["Valid", "Invalid"],
+    "Valid",
+    "The idea has a session liquidity reference, a raid, rejection, and displacement away. It still needs risk management and broader context.",
+    "Session liquidity raid validation",
+    "Ignoring session highs and lows as liquidity references.",
+    {
+      Invalid: "Invalid would fit if price accepted above the Asia high or never displaced lower."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-12",
+    "whyNot",
+    4,
+    "A setup sweeps sell-side liquidity, but the next candles are small overlapping bodies with no expansion. Why is this weak?",
+    ["No displacement", "Wrong session high", "Buy-side liquidity already swept", "The level was too obvious"],
+    "No displacement",
+    "After the raid, displacement helps show intent. Overlapping candles suggest chop, not decisive delivery.",
+    "Displacement as liquidity confirmation",
+    "Accepting a sweep when the reaction has no force.",
+    {
+      "Wrong session high": "The prompt is about a sell-side sweep, not a session high.",
+      "Buy-side liquidity already swept": "That is not the stated flaw.",
+      "The level was too obvious": "Obvious liquidity is usually desirable; the issue is reaction quality."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-13",
+    "multiple",
+    5,
+    "Full narrative: HTF draw is above price, London swept sell-side liquidity, and NY forms bullish displacement. What is the best interpretation?",
+    ["The sweep may support a bullish narrative, but entry still depends on structure, location, invalidation, and target", "The sweep alone is a complete setup", "HTF draw no longer matters", "You should only short because lows were taken"],
+    "The sweep may support a bullish narrative, but entry still depends on structure, location, invalidation, and target",
+    "Liquidity can start the story, but the trade narrative needs structure, displacement, location, invalidation, target, and risk.",
+    "Liquidity inside full trade narrative",
+    "Treating the first correct label as a complete plan.",
+    {
+      "The sweep alone is a complete setup": "Liquidity alone is not a trade setup.",
+      "HTF draw no longer matters": "HTF draw is a major context filter.",
+      "You should only short because lows were taken": "Taking lows can be a raid before bullish delivery."
+    }
+  ),
+  liquidityQuestion(
+    "liq-master-14",
+    "whyNot",
+    5,
+    "A trader takes a sweep after a major news spike, with huge spread, no clear structure, and no defined invalidation. What is the biggest process failure?",
+    ["No risk-defined execution", "Too many equal highs", "The sweep was below lows", "The chart had candles"],
+    "No risk-defined execution",
+    "Even if liquidity is visible, execution without invalidation and risk control is not a complete decision process.",
+    "Risk discipline after liquidity recognition",
+    "Using ICT labels to justify undisciplined execution.",
+    {
+      "Too many equal highs": "Equal highs may create liquidity, but the process failure is execution risk.",
+      "The sweep was below lows": "That can be normal for sell-side liquidity.",
+      "The chart had candles": "This is not a meaningful trading flaw."
+    }
+  )
+];
+
 export const quizQuestions: QuizQuestion[] = [
+  ...liquidityMasteryQuestions,
   ...models.flatMap((model) => [
     ...Array.from({ length: 20 }, (_, index) => multipleChoiceForModel(model, index)),
     ...Array.from({ length: 20 }, (_, index) => validInvalidForModel(model, index))

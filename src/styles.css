@@ -1032,6 +1032,42 @@ textarea {
   box-shadow: none;
 }
 
+.quiz-mission {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr);
+  gap: 16px;
+  align-items: center;
+  border-color: rgba(67, 240, 164, 0.24);
+  background: linear-gradient(135deg, rgba(67, 240, 164, 0.09), rgba(68, 214, 255, 0.04));
+}
+
+.quiz-mission span {
+  color: var(--cyan);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.quiz-mission h2,
+.quiz-mission p {
+  margin: 6px 0 0;
+}
+
+.quiz-mission p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.quiz-confidence {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 10px;
+  margin: 14px 0;
+  display: grid;
+  gap: 8px;
+}
+
 .loop-visual {
   display: grid;
   grid-template-columns: 1fr;
@@ -1793,6 +1829,7 @@ textarea {
   .precheck,
   .mvp-focus-card,
   .learn-focus,
+  .quiz-mission,
   .roadmap-list article,
   .compact-roadmap {
     grid-template-columns: 1fr;

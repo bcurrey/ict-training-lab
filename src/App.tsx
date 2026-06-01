@@ -996,32 +996,54 @@ function ModelLibrary({ startQuiz }: { startQuiz: (model?: ModelKey) => void }) 
 
 function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]; setResults: (results: QuizResult[]) => void; initialModel: ModelKey | "all" }) {
   const [quizFilter, setQuizFilter] = useState<ModelKey | "all">(initialModel);
-  const [mode, setMode] = useState<QuizQuestion["mode"]>("multiple");
+  const [mode, setMode] = useState<QuizQuestion["mode"] | "mastery">(initialModel === "Liquidity" ? "mastery" : "multiple");
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [index, setIndex] = useState(0);
-  const [feedback, setFeedback] = useState<QuizResult | null>(null);
+  const [confidence, setConfidence] = useState<Confidence>("medium");
+  const [feedback, setFeedback] = useState<{ result: QuizResult; question: QuizQuestion } | null>(null);
+  const [startedAt, setStartedAt] = useState(Date.now());
   const filtered = useMemo(() => {
-    const pool = quizQuestions.filter((question) => (quizFilter === "all" || question.model === quizFilter) && question.mode === mode && (difficulty === "all" || question.difficulty === difficulty));
-    return pool.length ? pool : quizQuestions.filter((question) => question.mode === mode);
+    const pool = quizQuestions.filter((question) => (quizFilter === "all" || question.model === quizFilter) && (mode === "mastery" || question.mode === mode) && (difficulty === "all" || question.difficulty === difficulty));
+    return pool.length ? pool : quizQuestions.filter((question) => mode === "mastery" || question.mode === mode);
   }, [quizFilter, mode, difficulty]);
   const question = filtered[index % filtered.length];
+  const liquidityResults = results.filter((result) => result.model === "Liquidity");
+  const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   const answer = (choice: string) => {
     const correct = choice === question.answer;
-    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), confidence: "medium" };
+    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), confidence, elapsedMs: Date.now() - startedAt };
     const next = [result, ...results];
     setResults(next);
     saveResults(next);
-    setFeedback(result);
+    setFeedback({ result, question });
+  };
+  const nextQuestion = () => {
+    setFeedback(null);
+    setConfidence("medium");
+    setStartedAt(Date.now());
+    setIndex(index + 1);
   };
   return (
     <div className="quiz-layout">
+      {quizFilter === "Liquidity" && (
+        <section className="panel quiz-mission">
+          <div><span>Personal mastery mode</span><h2>Liquidity must become automatic.</h2><p>This mixed quiz tests definitions, validation, invalidation, sequence, and trap recognition. The goal is not to finish questions. The goal is to stop missing the same kind of liquidity read.</p></div>
+          <div className="score-grid"><span><strong>Liquidity reps</strong><b>{liquidityResults.length}</b></span><span><strong>Accuracy</strong><b>{liquidityAccuracy}%</b></span><span><strong>Target</strong><b>85%</b></span></div>
+        </section>
+      )}
       <section className="panel quiz-controls">
         <select value={quizFilter} onChange={(event) => setQuizFilter(event.target.value as ModelKey | "all")}><option value="all">All models</option>{modelOrder.map((key) => <option key={key} value={key}>{modelLabels[key]}</option>)}</select>
-        <select value={mode} onChange={(event) => setMode(event.target.value as QuizQuestion["mode"])}><option value="multiple">Multiple choice</option><option value="valid">Valid / Invalid</option><option value="sequence">Sequence</option><option value="whyNot">Why Not</option></select>
+        <select value={mode} onChange={(event) => setMode(event.target.value as QuizQuestion["mode"] | "mastery")}><option value="mastery">Mixed mastery</option><option value="multiple">Multiple choice</option><option value="valid">Valid / Invalid</option><option value="sequence">Sequence</option><option value="whyNot">Why Not</option></select>
         <select value={difficulty} onChange={(event) => setDifficulty(event.target.value === "all" ? "all" : Number(event.target.value) as Difficulty)}><option value="all">All levels</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option></select>
       </section>
-      {feedback ? <section className={cls("feedback-card", feedback.result)}><h2>{feedback.result === "correct" ? "Correct" : "Review this one"}</h2><p><strong>Correct answer:</strong> {feedback.correctAnswer}</p><p><strong>Why it is correct:</strong> {feedback.explanation}</p><p><strong>Why the other answers are wrong:</strong> they either describe a related idea, skip confirmation, or imply a model is a signal by itself.</p><p><strong>Concept trained:</strong> {question.concept ?? `${modelLabels[question.model]} recognition`}</p><p><strong>Mistake prevented:</strong> {question.mistakePrevented ?? "over-labeling weak structure without context."}</p><button className="primary-button" onClick={() => { setFeedback(null); setIndex(index + 1); }}>Next question</button></section> : (
-        <section className="quiz-card"><div className="quiz-meta"><span>{modelLabels[question.model]}</span><DifficultyBadge level={question.difficulty} /></div><h2>{question.prompt}</h2><div className="choice-grid">{(question.choices ?? question.sequence ?? []).map((choice) => <button key={choice} onClick={() => answer(question.mode === "sequence" ? (question.sequence ?? []).join(" > ") : choice)}>{choice}</button>)}</div></section>
+      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2><p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why correct is correct:</strong> {feedback.result.explanation}</p><p><strong>Why your answer is wrong:</strong> {feedback.result.result === "correct" ? "Your answer matches the required read. Keep checking context before treating it as actionable." : feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p><p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this setup"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><p><strong>Confidence calibration:</strong> {feedback.result.confidence === "high" && feedback.result.result === "incorrect" ? "High-confidence miss. This should be reviewed before adding more advanced concepts." : `${feedback.result.confidence} confidence recorded.`}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
+        <section className="quiz-card">
+          <div className="quiz-meta"><span>{modelLabels[question.model]} - {question.mode}</span><DifficultyBadge level={question.difficulty} /></div>
+          <h2>{question.prompt}</h2>
+          <div className="quiz-confidence"><label>How sure are you?</label><ConfidencePicker value={confidence} onChange={setConfidence} /></div>
+          <div className="choice-grid">{(question.choices ?? question.sequence ?? []).map((choice) => <button key={choice} onClick={() => answer(choice)}>{choice}</button>)}</div>
+          <p className="empty">Answer before looking anything up. This is pattern-recognition training, not signal generation.</p>
+        </section>
       )}
     </div>
   );
@@ -1120,7 +1142,7 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
   const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
-  const steps = ["Study", "Chart drills", "Replay", "Review", "Summary"];
+  const steps = ["Study", "Mastery quiz", "Chart drills", "Replay", "Review", "Summary"];
   if (active) {
     return (
       <div className="page-grid guided-session">
@@ -1129,10 +1151,11 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
           <div className="session-progress">{steps.map((item, index) => <span className={cls(index <= step && "active")} key={item}>{index + 1}. {item}</span>)}</div>
         </section>
         {step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Foundation concept</span><h2>Liquidity Sweeps</h2></div><button className="ghost-button" onClick={() => setPage("learn")}>Open module</button></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div></section>}
-        {step === 1 && <ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} />}
-        {step === 2 && <ReplayMode results={results} setResults={setResults} />}
-        {step === 3 && <ReviewQueue results={results} onPractice={startQuiz} />}
-        {step === 4 && <section className="panel"><div className="section-title"><div><span>Session summary</span><h2>Training complete</h2></div></div><ProgressSummary results={results} /><div className="score-grid"><span><strong>Liquidity attempts</strong><b>{liquidityResults.length}</b></span><span><strong>Liquidity accuracy</strong><b>{liquidityAccuracy}%</b></span><span><strong>Certification progress</strong><b>{liquidity.completion}%</b></span></div><div className="answer-panel"><strong>Next best rep</strong><p>{liquidity.certified ? "Liquidity is certified. Move to Displacement only after reviewing any high-confidence misses." : "Repeat Liquidity drills until you can identify the pool, raid, and invalidation without guessing."}</p></div></section>}
+        {step === 1 && <TextQuiz results={results} setResults={setResults} initialModel="Liquidity" />}
+        {step === 2 && <ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} />}
+        {step === 3 && <ReplayMode results={results} setResults={setResults} />}
+        {step === 4 && <ReviewQueue results={results} onPractice={startQuiz} />}
+        {step === 5 && <section className="panel"><div className="section-title"><div><span>Session summary</span><h2>Training complete</h2></div></div><ProgressSummary results={results} /><div className="score-grid"><span><strong>Liquidity attempts</strong><b>{liquidityResults.length}</b></span><span><strong>Liquidity accuracy</strong><b>{liquidityAccuracy}%</b></span><span><strong>Certification progress</strong><b>{liquidity.completion}%</b></span></div><div className="answer-panel"><strong>Next best rep</strong><p>{liquidity.certified ? "Liquidity is certified. Move to Displacement only after reviewing any high-confidence misses." : "Repeat Liquidity drills until you can identify the pool, raid, and invalidation without guessing."}</p></div></section>}
         <div className="action-row"><button className="ghost-button" onClick={() => setStep(Math.max(0, step - 1))}>Back</button><button className="primary-button" onClick={() => step >= steps.length - 1 ? setActive(false) : setStep(step + 1)}>{step >= steps.length - 1 ? "Finish" : "Next step"}</button></div>
       </div>
     );
@@ -1143,14 +1166,15 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
       <section className="panel">
         <div className="section-title"><div><span>Today's Training</span><h2>Liquidity certification session</h2></div><button className="primary-button" onClick={() => { setActive(true); setStep(0); }}>Start Today's Training</button></div>
         <div className="mvp-focus-card compact">
-          <div><span>Do this before anything else</span><strong>Complete one Liquidity recognition loop</strong><p>Study for five minutes, mark ten charts, replay one sequence, then review misses.</p></div>
+          <div><span>Do this before anything else</span><strong>Complete one Liquidity recognition loop</strong><p>Study for five minutes, answer mixed mastery questions, mark ten charts, replay one sequence, then review misses.</p></div>
           <b>{liquidity.completion}%</b>
         </div>
         <div className="today-list">
           <article><b>1</b><div><strong>Study: Liquidity Sweeps - 5 minutes</strong><p>Review what creates a meaningful liquidity pool and what confirms the sweep.</p></div></article>
-          <article><b>2</b><div><strong>Drill: 10 liquidity chart examples</strong><p>Mark buy-side liquidity, sell-side liquidity, equal highs/lows, raids, and invalidation.</p></div></article>
-          <article><b>3</b><div><strong>Replay: 1 liquidity sequence</strong><p>Step forward before revealing future candles.</p></div></article>
-          <article><b>4</b><div><strong>Review: missed questions</strong><p>Repeat anything due or incorrect.</p></div></article>
+          <article><b>2</b><div><strong>Quiz: mixed Liquidity mastery questions</strong><p>Answer validation, invalidation, sequence, and trap questions with confidence tracking.</p></div></article>
+          <article><b>3</b><div><strong>Drill: 10 liquidity chart examples</strong><p>Mark buy-side liquidity, sell-side liquidity, equal highs/lows, raids, and invalidation.</p></div></article>
+          <article><b>4</b><div><strong>Replay: 1 liquidity sequence</strong><p>Step forward before revealing future candles.</p></div></article>
+          <article><b>5</b><div><strong>Review: missed questions</strong><p>Repeat anything due or incorrect.</p></div></article>
         </div>
       </section>
       <section className="panel">
