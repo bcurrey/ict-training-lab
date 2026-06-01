@@ -101,6 +101,10 @@ function getCertificationModule(id: string) {
   return certificationModules.find((module) => module.id === id) ?? certificationModules[0];
 }
 
+function nextRequiredVideo(module: CertificationModule, progress: CertificationProgress) {
+  return module.videos.find((video) => !progress.watchedVideos[video.id]) ?? module.videos[0];
+}
+
 function todayIso() {
   return new Date().toISOString();
 }
@@ -1090,7 +1094,9 @@ const recommendedPath = [
 ];
 
 function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) => void; certificationProgress: CertificationProgress }) {
-  const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
+  const liquidityModule = getCertificationModule(liquidityModuleId);
+  const liquidity = moduleStats(liquidityModule, certificationProgress);
+  const nextVideo = nextRequiredVideo(liquidityModule, certificationProgress);
   return (
     <div className="page-grid">
       <section className="panel start-panel simple-start">
@@ -1100,7 +1106,13 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
           <p>You are currently learning Liquidity. Your job is to learn where resting orders are likely to sit, identify buy-side and sell-side liquidity, distinguish a sweep from a breakout, and explain why liquidity alone is not a full trade setup.</p>
           <div className="start-mission">
             <div><strong>{liquidity.completion}%</strong><span>Liquidity certification progress</span></div>
-            <p><strong>What to do next:</strong> start your guided training session.</p>
+            <p><strong>What to do next:</strong> watch the next required video, then take its quiz.</p>
+          </div>
+          <div className="next-video-card">
+            <span>Watch this exact video next</span>
+            <strong>{nextVideo.creator} - {nextVideo.title}</strong>
+            <p>{nextVideo.whyRequired}</p>
+            <small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small>
           </div>
           <button className="primary-button solo-action" onClick={() => setPage("today")}>Start Training</button>
         </div>
@@ -1124,7 +1136,9 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
 function TodayTraining({ setPage, results, setResults, startQuiz, certificationProgress }: { setPage: (page: Page) => void; results: QuizResult[]; setResults: (results: QuizResult[]) => void; startQuiz: (model?: ModelKey) => void; certificationProgress: CertificationProgress }) {
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(false);
-  const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
+  const liquidityModule = getCertificationModule(liquidityModuleId);
+  const liquidity = moduleStats(liquidityModule, certificationProgress);
+  const nextVideo = nextRequiredVideo(liquidityModule, certificationProgress);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   const steps = ["Learn Liquidity", "Quiz Liquidity", "Chart Drill", "Replay", "Review Mistakes", "Session Summary"];
@@ -1142,12 +1156,12 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
         {!started && (
           <div className="step-ready">
             <strong>{current}</strong>
-            <p>{step === 0 ? "Start with the core Liquidity concept before answering questions or marking charts." : step === 1 ? "Prove the concept with mixed mastery questions." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed and overconfident answers." : "Check your Liquidity progress and decide the next rep."}</p>
+            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Prove the concept with mixed mastery questions." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed and overconfident answers." : "Check your Liquidity progress and decide the next rep."}</p>
             <button className="primary-button solo-action" onClick={beginStep}>Begin Step</button>
           </div>
         )}
       </section>
-      {started && step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Foundation concept</span><h2>Liquidity Sweeps</h2></div></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></section>}
+      {started && step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Required video</span><h2>{nextVideo.creator} - {nextVideo.title}</h2></div>{nextVideo.url && <a className="ghost-button" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><div className="next-video-card in-panel"><span>Why this video is required</span><p>{nextVideo.whyRequired}</p><small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></section>}
       {started && step === 1 && <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
       {started && step === 2 && <><ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
       {started && step === 3 && <><ReplayMode results={results} setResults={setResults} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
@@ -1305,6 +1319,7 @@ function LearnHub({ results, setPage, startQuiz, beginnerMode, setBeginnerMode, 
   const liquidity = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress);
   const module = getCertificationModule(liquidityModuleId);
   const model = getModel("Liquidity");
+  const nextVideo = nextRequiredVideo(module, certificationProgress);
   return (
     <div className="page-grid">
       <ModeHelp id="learn" />
@@ -1318,6 +1333,15 @@ function LearnHub({ results, setPage, startQuiz, beginnerMode, setBeginnerMode, 
           <strong>{liquidity.completion}%</strong>
           <span>Liquidity complete</span>
         </div>
+      </section>
+      <section className="panel next-video-panel">
+        <div className="section-title">
+          <div><span>Watch this exact video next</span><h2>{nextVideo.creator} - {nextVideo.title}</h2></div>
+          {nextVideo.url && <a className="primary-button" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}
+        </div>
+        <p><strong>Why this video is required:</strong> {nextVideo.whyRequired}</p>
+        <p><strong>Concepts to learn:</strong> {(nextVideo.concepts ?? []).join(", ")}</p>
+        <p><strong>After watching:</strong> mark it Completed below, add notes, then take its video quiz.</p>
       </section>
       <section className="panel">
         <div className="section-title"><div><span>Before drilling</span><h2>What you need to understand</h2></div></div>
