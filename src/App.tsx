@@ -356,6 +356,26 @@ function markupComparison(markers: AnnotationMarker[], scenario: ChartScenario) 
   };
 }
 
+function chartScenarioHasFeatures(scenario: ChartScenario, features: string[] = []) {
+  if (!features.length) return true;
+  const available = [
+    ...(scenario.tags ?? []),
+    ...(scenario.requiredVisibleFeatures ?? []),
+    ...scenario.callouts.map((callout) => callout.label),
+    scenario.prompt,
+    scenario.answer,
+    scenario.explanation
+  ].join(" ").toLowerCase();
+  return features.every((feature) => available.includes(feature.toLowerCase()));
+}
+
+function validatedChartForQuestion(question: QuizQuestion) {
+  if (!question.requiresChart || !question.chartScenarioId) return null;
+  const scenario = chartScenarios.find((item) => item.id === question.chartScenarioId);
+  if (!scenario) return null;
+  return chartScenarioHasFeatures(scenario, question.requiredVisibleFeatures) ? scenario : null;
+}
+
 function InteractiveChart({
   scenario,
   revealCount,
@@ -1063,29 +1083,12 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
   const [feedback, setFeedback] = useState<{ result: QuizResult; question: QuizQuestion } | null>(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const filtered = useMemo(() => {
-    const pool = quizQuestions.filter((question) => (quizFilter === "all" || question.model === quizFilter) && (mode === "mastery" || question.mode === mode) && (difficulty === "all" || question.difficulty === difficulty));
-    return pool.length ? pool : quizQuestions.filter((question) => mode === "mastery" || question.mode === mode);
+    const renderable = quizQuestions.filter((question) => !question.requiresChart || Boolean(validatedChartForQuestion(question)));
+    const pool = renderable.filter((question) => (quizFilter === "all" || question.model === quizFilter) && (mode === "mastery" || question.mode === mode) && (difficulty === "all" || question.difficulty === difficulty));
+    return pool.length ? pool : renderable.filter((question) => mode === "mastery" || question.mode === mode);
   }, [quizFilter, mode, difficulty]);
-  const scenarioPool = useMemo(() => {
-    const wantedMode = mode === "whyNot" ? "invalid" : "recognition";
-    const pool = chartScenarios.filter((scenario) => (quizFilter === "all" || scenario.model === quizFilter) && scenario.mode === wantedMode && (difficulty === "all" || scenario.difficulty === difficulty) && scenario.callouts.length > 0);
-    return pool.length ? pool : chartScenarios.filter((scenario) => scenario.mode === wantedMode && scenario.callouts.length > 0);
-  }, [quizFilter, mode, difficulty]);
-  const quizScenario = scenarioPool[index % scenarioPool.length] ?? chartScenarios[0];
-  const fallbackQuestion = filtered[index % filtered.length];
-  const question: QuizQuestion = {
-    id: `scenario-${quizScenario.id}`,
-    model: quizScenario.model,
-    mode: quizScenario.mode === "invalid" ? "whyNot" : "multiple",
-    difficulty: quizScenario.difficulty,
-    prompt: quizScenario.prompt,
-    choices: quizScenario.choices,
-    answer: quizScenario.answer,
-    explanation: quizScenario.explanation,
-    concept: `${modelLabels[quizScenario.model]} recognition on the displayed chart`,
-    mistakePrevented: quizScenario.mistakeTrained ?? "trusting a label before checking the chart evidence.",
-    wrongAnswers: Object.fromEntries(quizScenario.choices.filter((choice) => choice !== quizScenario.answer).map((choice) => [choice, `The trainer markup on this chart supports ${quizScenario.answer}, not ${choice}. Check the marked liquidity, structure, and invalidation.`]))
-  };
+  const question = filtered[index % filtered.length];
+  const quizScenario = validatedChartForQuestion(question);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   useEffect(() => {
@@ -1096,7 +1099,7 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
 
   const answer = (choice: string) => {
     const correct = choice === question.answer;
-    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: fallbackQuestion?.mode ?? question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), elapsedMs: Date.now() - startedAt };
+    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), elapsedMs: Date.now() - startedAt };
     const next = [result, ...results];
     setResults(next);
     saveResults(next);
@@ -1123,11 +1126,11 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
         <select value={mode} onChange={(event) => setMode(event.target.value as QuizQuestion["mode"] | "mastery")}><option value="mastery">Mixed mastery</option><option value="multiple">Multiple choice</option><option value="valid">Valid / Invalid</option><option value="sequence">Sequence</option><option value="whyNot">Why Not</option></select>
         <select value={difficulty} onChange={(event) => setDifficulty(event.target.value === "all" ? "all" : Number(event.target.value) as Difficulty)}><option value="all">All levels</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option></select>
       </section>
-      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2><div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts /></div><p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why this answer is correct:</strong> {feedback.result.explanation}</p>{feedback.result.result === "incorrect" && <p><strong>Why your answer is wrong:</strong> {feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p>}<p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this setup"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
+      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2>{quizScenario && <div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts /></div>}<p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why this answer is correct:</strong> {feedback.result.explanation}</p>{feedback.result.result === "incorrect" && <p><strong>Why your answer is wrong:</strong> {feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p>}<p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this concept"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
         <section className="quiz-card">
           <div className="quiz-meta"><span>{modelLabels[question.model]} - {question.mode}</span><DifficultyBadge level={question.difficulty} /></div>
           <h2>{question.prompt}</h2>
-          <div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts={false} /></div>
+          {quizScenario && <div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts={false} /></div>}
           <div className="choice-grid">{(question.choices ?? question.sequence ?? []).map((choice) => <button key={choice} onClick={() => answer(choice)}>{choice}</button>)}</div>
           <p className="empty">Answer before looking anything up. This is pattern-recognition training, not signal generation.</p>
         </section>

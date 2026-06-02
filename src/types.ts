@@ -42,6 +42,9 @@ export interface QuizQuestion {
   mistakePrevented?: string;
   wrongAnswers?: Record<string, string>;
   sequence?: string[];
+  requiresChart?: boolean;
+  chartScenarioId?: string;
+  requiredVisibleFeatures?: string[];
 }
 
 export interface QuizResult {
@@ -129,6 +132,7 @@ export interface ChartScenario {
   explanation: string;
   mistakeTrained?: string;
   tags?: string[];
+  requiredVisibleFeatures?: string[];
   callouts: ChartCallout[];
   narrativeSteps?: string[];
   panels?: Array<{
@@ -137,6 +141,21 @@ export interface ChartScenario {
     candles: Candle[];
     note: string;
   }>;
+}
+
+export interface ChartQuestion {
+  id: string;
+  concept: ModelKey;
+  difficulty: Difficulty;
+  chartImage?: string;
+  chartScenarioId: string;
+  prompt: string;
+  answerChoices: string[];
+  correctAnswer: string;
+  explanation: string;
+  whyWrong: Record<string, string>;
+  trainerMarkup: ChartCallout[];
+  requiredVisibleFeatures: string[];
 }
 
 export interface LearningPath {
