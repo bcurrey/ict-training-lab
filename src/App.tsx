@@ -50,6 +50,7 @@ import type {
 type Page = "start" | "orientation" | "today" | "learn" | "chartLab" | "replay" | "review" | "progress" | "upload" | "flaw" | "mtf" | "narrative" | "library" | "quiz" | "paths" | "about" | "phone";
 
 const nav = [
+  { page: "orientation" as const, label: "Orientation", icon: HelpCircle },
   { page: "start" as const, label: "Start Here", icon: Home },
   { page: "today" as const, label: "Training Session", icon: Target },
   { page: "learn" as const, label: "Learn", icon: BookOpen },
@@ -448,9 +449,9 @@ function InteractiveChart({
   return (
     <div className="chart-workbench">
       <div className="chart-toolbar">
-        <button onClick={undo}>Undo</button>
+        <button onClick={undo}>Undo Last Annotation</button>
         <button onClick={redo}>Redo</button>
-        <button onClick={() => push([])}>Clear</button>
+        <button onClick={() => push([])}>Clear All</button>
         {(["marker", "rectangle", "arrow", "text"] as AnnotationTool[]).map((item) => <button className={cls(tool === item && "active")} key={item} onClick={() => setTool(item)}>{item}</button>)}
         <select value={label} onChange={(event) => setLabel(event.target.value)}>
           {markerLabels.map((item) => <option key={item}>{item}</option>)}
@@ -546,7 +547,7 @@ function CertificationTracker({ progress, setPage }: { progress: CertificationPr
         {certificationModules.slice(0, 9).map((module) => {
           const stats = moduleStats(module, progress);
           const unlocked = moduleUnlocked(module, progress);
-          return <div className={cls("cert-row", stats.certified && "certified", !unlocked && "locked")} key={module.id}><span>{stats.certified ? "✓" : unlocked ? "○" : "Lock"}</span><strong>{stats.certified ? module.certification : module.title}</strong><b>{stats.completion}%</b></div>;
+          return <div className={cls("cert-row", stats.certified && "certified", !unlocked && "locked")} key={module.id}><span>{stats.certified ? "Done" : unlocked ? "Open" : "Lock"}</span><strong>{stats.certified ? module.certification : module.title}</strong><b>{stats.completion}%</b></div>;
         })}
       </div>
     </section>
@@ -554,40 +555,36 @@ function CertificationTracker({ progress, setPage }: { progress: CertificationPr
 }
 
 function OrientationPage({ setPage }: { setPage: (page: Page) => void }) {
-  const loop = ["Learn", "Chart Drills", "Replay", "Review", "Certification"];
+  const loop = ["Lesson", "Quiz", "Drill", "Replay", "Review", "Certification"];
   return (
     <div className="page-grid">
       <section className="panel start-panel">
         <div>
           <span>Orientation</span>
-          <h2>This is deliberate practice, not content consumption.</h2>
-          <p>ICT Training Lab trains recognition, narrative construction, decision-making, and failure recognition under uncertainty.</p>
-          <button className="primary-button" onClick={() => setPage("learn")}>Start My First Certification</button>
+          <h2>Learn ICT concepts by practicing them.</h2>
+          <p>ICT Training Lab is a deliberate-practice trainer for pattern recognition. It is not a signal service, strategy service, trade recommendation engine, or financial advice.</p>
+          <button className="primary-button solo-action" onClick={() => setPage("start")}>Start Lesson</button>
         </div>
         <div className="loop-visual">{loop.map((item, index) => <div className="flow-node" key={item}><span>{index + 1}</span><strong>{item}</strong>{index < loop.length - 1 && <ChevronRight />}</div>)}</div>
       </section>
       <section className="panel">
-        <div className="section-title"><div><span>What this app is</span><h2>Training roles</h2></div></div>
-        <div className="onboarding-grid">{["Pattern Recognition Trainer", "Market Structure Trainer", "Narrative Construction Trainer", "Deliberate Practice Platform", "Certification Platform"].map((item) => <article key={item}><strong>{item}</strong><p>Built to improve skill through repeated decisions and correction.</p></article>)}</div>
+        <div className="section-title"><div><span>What each tab does</span><h2>Simple map</h2></div></div>
+        <div className="tab-guide">
+          {[
+            ["Start Here", "Shows current certification progress and the next required action."],
+            ["Training Session", "Runs the complete loop: lesson, quiz, drill, replay, review, summary."],
+            ["Learn", "Reference library with concepts, videos, notes, examples, and checklists."],
+            ["Chart Drills", "Static chart recognition. Mark liquidity, MSS, BOS, FVG, entry, and invalidation, then compare against trainer markup."],
+            ["Replay", "Hidden-future candle training so you practice before future candles are revealed."],
+            ["Review", "Spaced repetition for missed questions and weak concepts."],
+            ["Progress", "Certification requirements, locked concepts, accuracy, and mastery."],
+            ["Upload", "Personal chart screenshots for self-grading and notes."]
+          ].map(([title, body]) => <article key={title}><strong>{title}</strong><p>{body}</p></article>)}
+        </div>
       </section>
       <section className="panel">
-        <div className="section-title"><div><span>What this app is not</span><h2>Boundaries</h2></div></div>
+        <div className="section-title"><div><span>Boundaries</span><h2>What this app is not</h2></div></div>
         <div className="onboarding-grid">{["Not a signal service", "Not a trade copier", "Not an alert service", "Not financial advice", "Not a prediction engine"].map((item) => <article key={item}><strong>{item}</strong><p>It teaches context and recognition; it does not tell you what to trade.</p></article>)}</div>
-      </section>
-      <section className="panel">
-        <div className="section-title"><div><span>Certification track</span><h2>Foundation to Master</h2></div></div>
-        <div className="mode-list">
-          <p><strong>Foundation:</strong> Liquidity, Displacement, MSS, BOS, FVG.</p>
-          <p><strong>Intermediate:</strong> IFVG, BPR, Order Blocks, Breaker Blocks.</p>
-          <p><strong>Advanced:</strong> Premium/Discount, Sessions, MTF, Narrative, Failure Recognition.</p>
-          <p><strong>Master:</strong> multi-timeframe analysis, narrative construction, setup ID, invalidation, failure recognition, liquidity targeting, execution planning.</p>
-        </div>
-      </section>
-      <section className="panel">
-        <div className="section-title"><div><span>First week roadmap</span><h2>Seven-day start</h2></div></div>
-        <div className="today-list">
-          {["Day 1: Orientation + Liquidity videos", "Day 2: Liquidity quizzes", "Day 3: Liquidity chart drills", "Day 4: Replay liquidity raids", "Day 5: Spot the Trap liquidity examples", "Day 6: Remediation review", "Day 7: Liquidity certification attempt"].map((item, index) => <article key={item}><b>{index + 1}</b><div><strong>{item}</strong><p>Keep sessions short and correction-focused.</p></div></article>)}
-        </div>
       </section>
     </div>
   );
@@ -708,6 +705,16 @@ function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation, boo
           <div><span>{selected.timeframe} - {modelLabels[selected.model]}</span><h2>{selected.prompt}</h2></div>
           <div className="action-row"><button className="ghost-button" onClick={() => setShowHelp(true)}><HelpCircle size={17} />Help</button><button className="ghost-button" onClick={addBookmark}><Bookmark size={17} />Bookmark</button><DifficultyBadge level={selected.difficulty} /></div>
         </div>
+        <section className="mode-help drill-instructions">
+          <strong>How to complete a chart drill</strong>
+          <p>Read the question, choose the tool, mark the chart, submit your answer, then compare against trainer markup.</p>
+          <div className="tool-guide">
+            <span><strong>Marker:</strong> exact points.</span>
+            <span><strong>Arrow:</strong> candle or reaction.</span>
+            <span><strong>Rectangle:</strong> liquidity pools, FVGs, BPRs, order blocks.</span>
+            <span><strong>Text:</strong> reasoning.</span>
+          </div>
+        </section>
         {assist && !showAnswer && <div className="mode-help"><strong>Beginner assist</strong><p>Hint: liquidity often sits near recent swings. Look for displacement after a sweep, then check whether an imbalance or structure break supports the read.</p><button className="ghost-button" onClick={() => setAssist(false)}>Hide hints</button></div>}
         <InteractiveChart scenario={selected} annotations={markers} setAnnotations={setMarkers} showAnswer={showAnswer} />
         <div className="precheck">
@@ -1109,24 +1116,25 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
   const nextVideo = nextRequiredVideo(liquidityModule, certificationProgress);
   const session = loadTrainingSession();
   const hasSession = Boolean(session.updatedAt) && (session.step > 0 || session.started);
+  const stepLabel = hasSession ? `Step ${session.step + 1} of 6` : "Step 1 of 6";
   return (
     <div className="page-grid">
       <section className="panel start-panel simple-start">
         <div>
-          <span>Your current mission</span>
+          <span>Your next action</span>
           <h2>Liquidity Certification</h2>
           <p>You are currently learning Liquidity. Your job is to learn where resting orders are likely to sit, identify buy-side and sell-side liquidity, distinguish a sweep from a breakout, and explain why liquidity alone is not a full trade setup.</p>
           <div className="start-mission">
-            <div><strong>{liquidity.completion}%</strong><span>Liquidity certification progress</span></div>
-            <p><strong>What to do next:</strong> watch the next required video, then take its quiz.</p>
+            <div><strong>{stepLabel}</strong><span>{liquidity.completion}% complete</span></div>
+            <p><strong>Watch Liquidity Video #{Math.min(liquidity.watched + 1, liquidityModule.videos.length)}</strong><br />Estimated time: {nextVideo.runtime}</p>
           </div>
           <div className="next-video-card">
-            <span>Watch this exact video next</span>
+            <span>Lesson</span>
             <strong>{nextVideo.creator} - {nextVideo.title}</strong>
             <p>{nextVideo.whyRequired}</p>
             <small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small>
           </div>
-          <button className="primary-button solo-action" onClick={() => setPage("today")}>{hasSession ? "Resume Training" : "Start Training"}</button>
+          <button className="primary-button solo-action" onClick={() => setPage("today")}>{hasSession ? "Resume Lesson" : "Start Lesson"}</button>
         </div>
         <ChartPreview scenario={chartScenarios[0]} showCallouts />
       </section>
@@ -1145,7 +1153,7 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
   );
 }
 
-function TodayTraining({ setPage, results, setResults, startQuiz, certificationProgress }: { setPage: (page: Page) => void; results: QuizResult[]; setResults: (results: QuizResult[]) => void; startQuiz: (model?: ModelKey) => void; certificationProgress: CertificationProgress }) {
+function TodayTraining({ setPage, results, setResults, startQuiz, certificationProgress, setCertificationProgress }: { setPage: (page: Page) => void; results: QuizResult[]; setResults: (results: QuizResult[]) => void; startQuiz: (model?: ModelKey) => void; certificationProgress: CertificationProgress; setCertificationProgress: (progress: CertificationProgress) => void }) {
   const savedSession = loadTrainingSession();
   const [step, setStep] = useState(savedSession.step);
   const [started, setStarted] = useState(savedSession.started);
@@ -1155,40 +1163,83 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
   const hasCompletedVideo = liquidityModule.videos.some((video) => certificationProgress.watchedVideos[video.id]);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
-  const steps = ["Learn Liquidity", "Quiz Liquidity", "Chart Drill", "Replay", "Review Mistakes", "Session Summary"];
+  const steps = ["Watch Video", "Pass Quiz", "Complete Drill", "Complete Replay", "Review Mistakes", "Summary"];
   const current = steps[step];
+  const requirements = [
+    `Watch ${liquidityModule.videos.length} videos`,
+    "Pass video quizzes at 80%",
+    "Complete 10 drills",
+    "Complete 3 replays",
+    "Pass final exam at 85%"
+  ];
   const updateSession = (nextStep: number, nextStarted: boolean) => {
     setStep(nextStep);
     setStarted(nextStarted);
     saveTrainingSession({ step: nextStep, started: nextStarted, updatedAt: todayIso() });
   };
-  const beginStep = () => updateSession(step, true);
+  const stepBlocked = step === 1 && !hasCompletedVideo;
+  const beginStep = () => {
+    if (stepBlocked) return;
+    updateSession(step, true);
+  };
   const completeStep = () => {
     updateSession(Math.min(step + 1, steps.length - 1), false);
+  };
+  const completeVideoStep = () => {
+    const videoId = nextVideo.id;
+    const next = {
+      ...certificationProgress,
+      watchedVideos: { ...certificationProgress.watchedVideos, [videoId]: true },
+      videoStatus: { ...(certificationProgress.videoStatus ?? {}), [videoId]: "completed" as const },
+      videoCompletedAt: { ...(certificationProgress.videoCompletedAt ?? {}), [videoId]: todayIso() }
+    };
+    setCertificationProgress(next);
+    saveCertificationProgress(next);
+    updateSession(1, false);
+  };
+  const completeDrillStep = () => {
+    const next = {
+      ...certificationProgress,
+      chartDrills: { ...certificationProgress.chartDrills, [liquidityModule.id]: Math.min(liquidityModule.chartDrillsRequired, (certificationProgress.chartDrills[liquidityModule.id] ?? 0) + 1) }
+    };
+    setCertificationProgress(next);
+    saveCertificationProgress(next);
+    completeStep();
+  };
+  const completeReplayStep = () => {
+    const next = {
+      ...certificationProgress,
+      replayExercises: { ...certificationProgress.replayExercises, [liquidityModule.id]: Math.min(liquidityModule.replayRequired, (certificationProgress.replayExercises[liquidityModule.id] ?? 0) + 1) }
+    };
+    setCertificationProgress(next);
+    saveCertificationProgress(next);
+    completeStep();
   };
   return (
     <div className="page-grid guided-session">
       <section className="panel">
-        <div className="section-title"><div><span>Training Session</span><h2>{current}</h2></div></div>
-        <div className="session-progress">{steps.map((item, index) => <span className={cls(index === step && "active", index < step && "done")} key={item}>{index + 1}. {item}</span>)}</div>
+        <div className="section-title"><div><span>Liquidity Certification</span><h2>Step {step + 1} of {steps.length}: {current}</h2></div></div>
+        <div className="session-progress">{steps.map((item, index) => <span className={cls(index === step && "active", index < step && "done")} key={item}>{index < step ? "Done" : "Open"} {item}</span>)}</div>
         {!started && (
           <div className="step-ready">
             <strong>{current}</strong>
-            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Prove the concept with mixed mastery questions." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed and overconfident answers." : "Check your Liquidity progress and decide the next rep."}</p>
-            <button className="primary-button solo-action" onClick={beginStep}>Begin Step</button>
+            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Pass the quiz for the lesson you just completed." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed answers." : "Check your Liquidity progress and the next certification requirement."}</p>
+            {stepBlocked && <div className="mode-help"><strong>Prerequisite</strong><p>Complete the video step first. The quiz unlocks automatically after the lesson is saved.</p></div>}
+            <button className="primary-button solo-action" disabled={stepBlocked} onClick={beginStep}>{step === 0 ? "Start Lesson" : step === 1 ? "Start Quiz" : step === 2 ? "Start Drill" : step === 3 ? "Start Replay" : "Begin Step"}</button>
           </div>
         )}
       </section>
-      {started && step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Required video</span><h2>{nextVideo.creator} - {nextVideo.title}</h2></div>{nextVideo.url && <a className="ghost-button" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><div className="next-video-card in-panel"><span>Why this video is required</span><p>{nextVideo.whyRequired}</p><small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></section>}
-      {started && step === 1 && (hasCompletedVideo ? <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></> : <section className="panel"><div className="section-title"><div><span>Video required first</span><h2>Watch one required Liquidity video before quizzing.</h2></div></div><p className="definition">The quiz is meant to test understanding after a lesson, not replace the lesson. Complete the next required video first, add notes, then come back to Quiz Liquidity.</p><div className="next-video-card in-panel"><span>Watch this exact video next</span><strong>{nextVideo.creator} - {nextVideo.title}</strong><p>{nextVideo.whyRequired}</p>{nextVideo.url && <a className="primary-button solo-action" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><button className="ghost-button" onClick={() => { updateSession(0, true); }}>Back to video step</button></section>)}
-      {started && step === 2 && <><ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
-      {started && step === 3 && <><ReplayMode results={results} setResults={setResults} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
-      {started && step === 4 && <><ReviewQueue results={results} onPractice={startQuiz} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
+      {started && step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Lesson</span><h2>{nextVideo.creator} - {nextVideo.title}</h2></div>{nextVideo.url && <a className="ghost-button" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><div className="next-video-card in-panel"><span>Why this lesson is required</span><p>{nextVideo.whyRequired}</p><small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div><button className="primary-button solo-action sticky-next" onClick={completeVideoStep}><CheckCircle2 size={17} />Complete Video</button></section>}
+      {started && step === 1 && <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Quiz</button></>}
+      {started && step === 2 && <><ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} /><button className="primary-button solo-action sticky-next" onClick={completeDrillStep}>Complete Drill</button></>}
+      {started && step === 3 && <><ReplayMode results={results} setResults={setResults} /><button className="primary-button solo-action sticky-next" onClick={completeReplayStep}>Complete Replay</button></>}
+      {started && step === 4 && <><ReviewQueue results={results} onPractice={startQuiz} /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Review</button></>}
       {started && step === 5 && (
         <section className="panel">
           <div className="section-title"><div><span>Session summary</span><h2>Training complete</h2></div></div>
           <ProgressSummary results={results} />
           <div className="score-grid"><span><strong>Liquidity attempts</strong><b>{liquidityResults.length}</b></span><span><strong>Liquidity accuracy</strong><b>{liquidityAccuracy}%</b></span><span><strong>Certification progress</strong><b>{liquidity.completion}%</b></span></div>
+          <div className="mode-list">{requirements.map((item) => <p key={item}><strong>{item}</strong></p>)}</div>
           <div className="answer-panel"><strong>Next best rep</strong><p>{liquidity.certified ? "Liquidity is certified. Move to Displacement only after reviewing any high-confidence misses." : "Repeat Liquidity drills until you can identify the pool, raid, and invalidation without guessing."}</p></div>
         </section>
       )}
@@ -1243,6 +1294,12 @@ function ModuleCard({ module, progress, setProgress }: { module: CertificationMo
         <div className="module-score"><strong>{stats.completion}%</strong><small>{stats.certified ? module.certification : unlocked ? "In progress" : "Locked"}</small></div>
       </button>
       <div className="bar"><i style={{ width: `${stats.completion}%` }} /></div>
+      {!unlocked && (
+        <div className="locked-requirements">
+          <strong>Locked until prior certification is complete.</strong>
+          <p>Unlock requirement: complete {module.unlockAfter?.map((id) => certificationModules.find((item) => item.id === id)?.title ?? id).join(", ")} Certification first.</p>
+        </div>
+      )}
       {open && unlocked && (
         <div className="module-body">
           <div className="requirement-grid">
@@ -1305,8 +1362,8 @@ function CertificationPath({ progress, setProgress }: { progress: CertificationP
         <div className="mode-list">
           <p><strong>1. Watch:</strong> mark Liquidity videos watched and write timestamp notes.</p>
           <p><strong>2. Check:</strong> pass each video quiz at 80%+ before counting it complete.</p>
-          <p><strong>3. Drill:</strong> complete 25 chart reps focused only on liquidity recognition.</p>
-          <p><strong>4. Replay:</strong> complete 5 hidden-future liquidity sequences.</p>
+          <p><strong>3. Drill:</strong> complete 10 chart reps focused only on liquidity recognition.</p>
+          <p><strong>4. Replay:</strong> complete 3 hidden-future liquidity sequences.</p>
           <p><strong>5. Certify:</strong> pass the Liquidity final at 85% before moving to Displacement.</p>
           <p><strong>Current next step:</strong> {overview.next.title}</p>
         </div>
@@ -1426,7 +1483,7 @@ function PhoneHelp({ setPage }: { setPage: (page: Page) => void }) {
 }
 
 export function App() {
-  const [page, setPage] = useState<Page>("start");
+  const [page, setPage] = useState<Page>("orientation");
   const [results, setResults] = useState<QuizResult[]>(loadResults);
   const [annotations, setAnnotations] = useState<ChartAnnotation[]>(loadAnnotations);
   const [certificationProgress, setCertificationProgress] = useState<CertificationProgress>(loadCertificationProgress);
@@ -1473,7 +1530,7 @@ export function App() {
         {page === "about" && <AboutSystem setPage={setPage} />}
         {page === "phone" && <PhoneHelp setPage={setPage} />}
 
-        {page === "today" && <TodayTraining setPage={setPage} results={results} setResults={setResults} startQuiz={startQuiz} certificationProgress={certificationProgress} />}
+        {page === "today" && <TodayTraining setPage={setPage} results={results} setResults={setResults} startQuiz={startQuiz} certificationProgress={certificationProgress} setCertificationProgress={setCertificationProgress} />}
 
         {page === "learn" && <LearnHub results={results} setPage={setPage} startQuiz={startQuiz} beginnerMode={beginnerMode} setBeginnerMode={setBeginnerMode} certificationProgress={certificationProgress} setCertificationProgress={setCertificationProgress} />}
 

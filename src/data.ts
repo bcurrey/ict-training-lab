@@ -912,8 +912,8 @@ export const certificationModules: CertificationModule[] = [
         requiredQuiz: "Draw On Liquidity Quiz"
       }
     ],
-    chartDrillsRequired: 25,
-    replayRequired: 5,
+    chartDrillsRequired: 10,
+    replayRequired: 3,
     examCharts: 50,
     passingScore: 85,
     examTopics: ["Mark buy side liquidity", "Mark sell side liquidity", "Identify equal highs", "Identify equal lows", "Has liquidity already been taken?", "Is this a raid or breakout?"],

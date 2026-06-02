@@ -877,6 +877,29 @@ textarea {
   justify-content: center;
 }
 
+.sticky-next {
+  margin-top: 12px;
+}
+
+.tool-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.locked-requirements {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(246, 189, 96, 0.25);
+  border-radius: 8px;
+  background: rgba(246, 189, 96, 0.07);
+}
+
+.locked-requirements p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
 .learn-focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 210px;
@@ -1799,8 +1822,8 @@ details summary {
     right: 0;
     bottom: 0;
     display: grid;
-    grid-template-columns: repeat(8, minmax(72px, 1fr));
-    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 58px;
     background: rgba(8, 11, 16, 0.94);
     border-top: 1px solid var(--line);
     backdrop-filter: blur(18px);
@@ -1901,6 +1924,17 @@ details summary {
     min-height: 48px;
     font-size: 0.95rem;
   }
+  .sticky-next {
+    position: sticky;
+    bottom: 128px;
+    z-index: 8;
+    width: 100%;
+    min-height: 54px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  }
+  .tool-guide {
+    grid-template-columns: 1fr;
+  }
   .chart-toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1971,6 +2005,6 @@ details summary {
     padding: 14px;
   }
   main {
-    padding: 14px 12px 92px;
+    padding: 14px 12px 142px;
   }
 }
