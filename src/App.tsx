@@ -28,7 +28,7 @@ import {
   Zap
 } from "lucide-react";
 import { certificationModules, certificationQuizFor, chartScenarios, getModel, learningPaths, modelLabels, modelOrder, quizQuestions } from "./data";
-import { loadAnnotations, loadBookmarks, loadCertificationProgress, loadResults, nextReviewDate, saveAnnotations, saveBookmarks, saveCertificationProgress, saveResults } from "./storage";
+import { loadAnnotations, loadBookmarks, loadCertificationProgress, loadQuizProgress, loadResults, loadTrainingSession, nextReviewDate, saveAnnotations, saveBookmarks, saveCertificationProgress, saveQuizProgress, saveResults, saveTrainingSession } from "./storage";
 import type {
   AnnotationMarker,
   AnnotationTool,
@@ -1001,7 +1001,8 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
   const [quizFilter, setQuizFilter] = useState<ModelKey | "all">(initialModel);
   const [mode, setMode] = useState<QuizQuestion["mode"] | "mastery">(initialModel === "Liquidity" ? "mastery" : "multiple");
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
-  const [index, setIndex] = useState(0);
+  const quizProgressKey = `${quizFilter}-${mode}-${difficulty}`;
+  const [index, setIndex] = useState(() => loadQuizProgress()[quizProgressKey] ?? 0);
   const [feedback, setFeedback] = useState<{ result: QuizResult; question: QuizQuestion } | null>(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const filtered = useMemo(() => {
@@ -1012,6 +1013,12 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
   const quizScenario = chartScenarios.filter((scenario) => scenario.model === question.model && scenario.mode === (question.mode === "whyNot" ? "invalid" : "recognition"))[index % Math.max(1, chartScenarios.filter((scenario) => scenario.model === question.model && scenario.mode === (question.mode === "whyNot" ? "invalid" : "recognition")).length)] ?? chartScenarios.find((scenario) => scenario.model === question.model) ?? chartScenarios[0];
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
+  useEffect(() => {
+    setIndex(loadQuizProgress()[quizProgressKey] ?? 0);
+    setFeedback(null);
+    setStartedAt(Date.now());
+  }, [quizProgressKey]);
+
   const answer = (choice: string) => {
     const correct = choice === question.answer;
     const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), elapsedMs: Date.now() - startedAt };
@@ -1021,9 +1028,12 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
     setFeedback({ result, question });
   };
   const nextQuestion = () => {
+    const nextIndex = index + 1;
+    const progress = loadQuizProgress();
+    saveQuizProgress({ ...progress, [quizProgressKey]: nextIndex });
     setFeedback(null);
     setStartedAt(Date.now());
-    setIndex(index + 1);
+    setIndex(nextIndex);
   };
   return (
     <div className="quiz-layout">
@@ -1097,6 +1107,8 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
   const liquidityModule = getCertificationModule(liquidityModuleId);
   const liquidity = moduleStats(liquidityModule, certificationProgress);
   const nextVideo = nextRequiredVideo(liquidityModule, certificationProgress);
+  const session = loadTrainingSession();
+  const hasSession = Boolean(session.updatedAt) && (session.step > 0 || session.started);
   return (
     <div className="page-grid">
       <section className="panel start-panel simple-start">
@@ -1114,7 +1126,7 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
             <p>{nextVideo.whyRequired}</p>
             <small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small>
           </div>
-          <button className="primary-button solo-action" onClick={() => setPage("today")}>Start Training</button>
+          <button className="primary-button solo-action" onClick={() => setPage("today")}>{hasSession ? "Resume Training" : "Start Training"}</button>
         </div>
         <ChartPreview scenario={chartScenarios[0]} showCallouts />
       </section>
@@ -1134,19 +1146,25 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
 }
 
 function TodayTraining({ setPage, results, setResults, startQuiz, certificationProgress }: { setPage: (page: Page) => void; results: QuizResult[]; setResults: (results: QuizResult[]) => void; startQuiz: (model?: ModelKey) => void; certificationProgress: CertificationProgress }) {
-  const [step, setStep] = useState(0);
-  const [started, setStarted] = useState(false);
+  const savedSession = loadTrainingSession();
+  const [step, setStep] = useState(savedSession.step);
+  const [started, setStarted] = useState(savedSession.started);
   const liquidityModule = getCertificationModule(liquidityModuleId);
   const liquidity = moduleStats(liquidityModule, certificationProgress);
   const nextVideo = nextRequiredVideo(liquidityModule, certificationProgress);
+  const hasCompletedVideo = liquidityModule.videos.some((video) => certificationProgress.watchedVideos[video.id]);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   const steps = ["Learn Liquidity", "Quiz Liquidity", "Chart Drill", "Replay", "Review Mistakes", "Session Summary"];
   const current = steps[step];
-  const beginStep = () => setStarted(true);
+  const updateSession = (nextStep: number, nextStarted: boolean) => {
+    setStep(nextStep);
+    setStarted(nextStarted);
+    saveTrainingSession({ step: nextStep, started: nextStarted, updatedAt: todayIso() });
+  };
+  const beginStep = () => updateSession(step, true);
   const completeStep = () => {
-    setStarted(false);
-    setStep((value) => Math.min(value + 1, steps.length - 1));
+    updateSession(Math.min(step + 1, steps.length - 1), false);
   };
   return (
     <div className="page-grid guided-session">
@@ -1162,7 +1180,7 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
         )}
       </section>
       {started && step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Required video</span><h2>{nextVideo.creator} - {nextVideo.title}</h2></div>{nextVideo.url && <a className="ghost-button" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><div className="next-video-card in-panel"><span>Why this video is required</span><p>{nextVideo.whyRequired}</p><small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></section>}
-      {started && step === 1 && <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
+      {started && step === 1 && (hasCompletedVideo ? <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></> : <section className="panel"><div className="section-title"><div><span>Video required first</span><h2>Watch one required Liquidity video before quizzing.</h2></div></div><p className="definition">The quiz is meant to test understanding after a lesson, not replace the lesson. Complete the next required video first, add notes, then come back to Quiz Liquidity.</p><div className="next-video-card in-panel"><span>Watch this exact video next</span><strong>{nextVideo.creator} - {nextVideo.title}</strong><p>{nextVideo.whyRequired}</p>{nextVideo.url && <a className="primary-button solo-action" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><button className="ghost-button" onClick={() => { updateSession(0, true); }}>Back to video step</button></section>)}
       {started && step === 2 && <><ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
       {started && step === 3 && <><ReplayMode results={results} setResults={setResults} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
       {started && step === 4 && <><ReviewQueue results={results} onPractice={startQuiz} /><button className="primary-button solo-action" onClick={completeStep}>Complete Step</button></>}
@@ -1244,12 +1262,13 @@ function ModuleCard({ module, progress, setProgress }: { module: CertificationMo
                 <span>{video.runtime}</span>
                 <p><strong>Why required:</strong> {video.whyRequired ?? "This curated lesson prepares you for recognition drills and certification questions."}</p>
                 <p><strong>Learn:</strong> {(video.concepts ?? module.examTopics).join(", ")}</p>
+                <p><strong>Required Quiz:</strong> {video.requiredQuiz ?? `${module.title} Video Quiz`}</p>
                 <div className="segmented">
                   {(["not-started", "in-progress", "completed"] as const).map((status) => <button key={status} className={cls(((progress.videoStatus ?? {})[video.id] ?? (progress.watchedVideos[video.id] ? "completed" : "not-started")) === status && "active")} onClick={() => setVideoStatus(video.id, status)}>{status === "not-started" ? "Not Started" : status === "in-progress" ? "In Progress" : "Completed"}</button>)}
                 </div>
                 {(progress.videoCompletedAt ?? {})[video.id] && <span>Completed {shortDate((progress.videoCompletedAt ?? {})[video.id])} - Quiz score {progress.quizScores[video.id] ?? 0}%</span>}
                 <textarea value={progress.videoNotes[video.id] ?? ""} onChange={(event) => update({ ...progress, videoNotes: { ...progress.videoNotes, [video.id]: event.target.value } })} placeholder="Notes: what recognition rule, invalidation, or chart behavior matters?" />
-                <button className="ghost-button" disabled={!progress.watchedVideos[video.id]} onClick={() => setActiveQuiz(video.id)}>Take video quiz {progress.quizScores[video.id] ? `(${progress.quizScores[video.id]}%)` : ""}</button>
+                <button className="ghost-button" disabled={!progress.watchedVideos[video.id]} onClick={() => setActiveQuiz(video.id)}>Take {video.requiredQuiz ?? "video quiz"} {progress.quizScores[video.id] ? `(${progress.quizScores[video.id]}%)` : ""}</button>
               </section>
             ))}
           </div>

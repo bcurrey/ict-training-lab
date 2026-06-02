@@ -158,6 +158,7 @@ export interface VideoLesson {
   url?: string;
   concepts?: string[];
   whyRequired?: string;
+  requiredQuiz?: string;
 }
 
 export interface CertificationQuizQuestion {

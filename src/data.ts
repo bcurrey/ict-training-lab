@@ -893,39 +893,23 @@ export const certificationModules: CertificationModule[] = [
     videos: [
       {
         id: "liq-ict-understanding",
-        title: "Understanding Liquidity",
-        creator: "ICT",
-        runtime: "35 min",
-        url: "https://www.youtube.com/results?search_query=ICT+Understanding+Liquidity",
-        concepts: ["buy-side liquidity", "sell-side liquidity", "equal highs", "equal lows", "why price seeks liquidity"],
-        whyRequired: "This video establishes liquidity as the first map-reading skill: where resting orders are likely to sit before any setup can be judged."
-      },
-      {
-        id: "liq-dodgy-sweep-breakout",
-        title: "Liquidity Sweep vs Breakout",
-        creator: "Dodgy's DD",
-        runtime: "22 min",
-        url: "https://www.youtube.com/results?search_query=Dodgy%27s+DD+Liquidity+Sweep+vs+Breakout",
-        concepts: ["sweep vs breakout", "trader traps", "acceptance vs rejection", "confirmation requirements"],
-        whyRequired: "This video teaches the difference between liquidity sweeps and true breakouts. This distinction is required before attempting liquidity chart drills."
-      },
-      {
-        id: "liq-ict-internal-external",
-        title: "External Range Liquidity and Internal Range Liquidity",
-        creator: "ICT",
-        runtime: "40 min",
-        url: "https://www.youtube.com/results?search_query=ICT+External+Range+Liquidity+Internal+Range+Liquidity",
-        concepts: ["external liquidity", "internal liquidity", "draw on liquidity", "dealing range context"],
-        whyRequired: "This video connects liquidity pools to draw-on-liquidity logic so you do not treat every equal high or low as equally important."
-      },
-      {
-        id: "liq-ttrades-real-charts",
-        title: "Liquidity Explained Using Real Charts",
+        title: "Liquidity: Buyside & Sellside - ICT Concepts",
         creator: "TTrades",
-        runtime: "24 min",
-        url: "https://www.youtube.com/results?search_query=TTrades+Liquidity+Explained+Using+Real+Charts",
-        concepts: ["practical examples", "chart recognition", "pattern repetition", "valid vs weak sweeps"],
-        whyRequired: "This video bridges theory into chart recognition, preparing you for the drill and replay portions of Liquidity certification."
+        runtime: "10 min",
+        url: "https://www.youtube.com/watch?v=U8xH2dEgH5A",
+        concepts: ["buyside liquidity", "sellside liquidity", "equal highs", "equal lows", "stop clusters"],
+        whyRequired: "This is the first required video because it teaches the basic map: where buy stops and sell stops are likely resting before you judge any sweep.",
+        requiredQuiz: "Liquidity Fundamentals Quiz"
+      },
+      {
+        id: "liq-ttrades-important-levels",
+        title: "Important Liquidity Levels - Draw On Liquidity - ICT",
+        creator: "TTrades",
+        runtime: "13 min",
+        url: "https://www.youtube.com/watch?v=YESqIoA7Wyg",
+        concepts: ["draw on liquidity", "liquidity targets", "liquidity framework"],
+        whyRequired: "This video is required because you need to know which liquidity levels matter most instead of marking every high or low on the chart.",
+        requiredQuiz: "Draw On Liquidity Quiz"
       }
     ],
     chartDrillsRequired: 25,
@@ -942,9 +926,26 @@ export const certificationModules: CertificationModule[] = [
     model: "MSS",
     certification: "DISPLACEMENT CERTIFIED",
     videos: [
-      { id: "disp-ttrades", title: "What is Displacement?", creator: "TTrades", runtime: "16 min" },
-      { id: "disp-ict", title: "ICT displacement lesson", creator: "ICT", runtime: "29 min" },
-      { id: "disp-library", title: "Displacement examples library", creator: "ICT Training Lab", runtime: "20 min" }
+      {
+        id: "disp-ttrades-intro",
+        title: "Intro to Market Structure Shifts, Fair Value Gaps, and Displacement",
+        creator: "TTrades",
+        runtime: "TTrades lesson",
+        url: "https://www.youtube.com/watch?v=PePk1V0Q4QQ",
+        concepts: ["displacement", "imbalance creation", "delivery shift"],
+        whyRequired: "This video introduces displacement as the force behind MSS and FVG creation, so it must come before displacement recognition drills.",
+        requiredQuiz: "Displacement Fundamentals"
+      },
+      {
+        id: "disp-ict-2022",
+        title: "January 22, 2025 - Live Execution - Forex GbpUsd London Macro",
+        creator: "ICT",
+        runtime: "ICT live execution lesson",
+        url: "https://www.youtube.com/watch?v=q5lz5594dpE",
+        concepts: ["institutional displacement", "market structure shift", "strong vs weak moves", "live execution context"],
+        whyRequired: "This ICT video is required because it shows displacement and market structure in a live execution context instead of isolated textbook definitions.",
+        requiredQuiz: "Advanced Displacement Recognition"
+      }
     ],
     chartDrillsRequired: 20,
     replayRequired: 5,
@@ -961,10 +962,26 @@ export const certificationModules: CertificationModule[] = [
     model: "MSS",
     certification: "MSS CERTIFIED",
     videos: [
-      { id: "mss-ttrades-concepts", title: "Market Structure Shift Concepts", creator: "TTrades", runtime: "28 min" },
-      { id: "mss-vs-grab", title: "MSS vs Liquidity Grab", creator: "TTrades", runtime: "24 min" },
-      { id: "mss-ict", title: "ICT MSS lesson", creator: "ICT", runtime: "42 min" },
-      { id: "mss-high-prob", title: "High Probability MSS examples", creator: "ICT Training Lab", runtime: "25 min" }
+      {
+        id: "mss-ttrades-core",
+        title: "Market Structure Shift - ICT Concepts",
+        creator: "TTrades",
+        runtime: "TTrades lesson",
+        url: "https://www.youtube.com/watch?v=_94CPMjWi9E",
+        concepts: ["bullish MSS", "bearish MSS", "displacement confirmation"],
+        whyRequired: "This is the core MSS lesson and defines what must shift before a reversal model is valid.",
+        requiredQuiz: "MSS Fundamentals"
+      },
+      {
+        id: "mss-ttrades-liquidity-grab",
+        title: "Market Structure Shift vs Liquidity Grab - ICT Concepts",
+        creator: "TTrades",
+        runtime: "TTrades lesson",
+        url: "https://www.youtube.com/watch?v=ynFA6E3qHj0",
+        concepts: ["valid MSS", "fake MSS", "liquidity grab comparison"],
+        whyRequired: "This video is required because it trains the difference between a true structure shift and a liquidity grab that should be rejected.",
+        requiredQuiz: "MSS Validation Quiz"
+      }
     ],
     chartDrillsRequired: 30,
     replayRequired: 10,
@@ -981,9 +998,26 @@ export const certificationModules: CertificationModule[] = [
     model: "BOS",
     certification: "BOS CERTIFIED",
     videos: [
-      { id: "bos-ict", title: "ICT BOS lesson", creator: "ICT", runtime: "31 min" },
-      { id: "bos-mss-comparison", title: "MSS vs BOS comparison module", creator: "ICT Training Lab", runtime: "18 min" },
-      { id: "bos-library", title: "BOS examples library", creator: "ICT Training Lab", runtime: "22 min" }
+      {
+        id: "bos-ttrades-market-structure",
+        title: "Understanding Market Structure For Trading",
+        creator: "TTrades",
+        runtime: "14 min",
+        url: "https://www.youtube.com/watch?v=sgAnVR6RSDg",
+        concepts: ["continuation structure", "higher highs", "higher lows", "lower highs", "lower lows"],
+        whyRequired: "This video is required because BOS recognition depends on understanding continuation structure before labeling breaks.",
+        requiredQuiz: "BOS Recognition Quiz"
+      },
+      {
+        id: "bos-ttrades-mss-grab",
+        title: "Market Structure Shift vs Liquidity Grab - ICT Concepts",
+        creator: "TTrades",
+        runtime: "TTrades lesson",
+        url: "https://www.youtube.com/watch?v=ynFA6E3qHj0",
+        concepts: ["BOS vs MSS", "continuation vs reversal", "liquidity grab comparison"],
+        whyRequired: "This comparison is required so BOS is not confused with MSS or a failed liquidity grab.",
+        requiredQuiz: "BOS vs MSS Exam"
+      }
     ],
     chartDrillsRequired: 25,
     replayRequired: 5,
@@ -1000,9 +1034,26 @@ export const certificationModules: CertificationModule[] = [
     model: "FVG",
     certification: "FVG CERTIFIED",
     videos: [
-      { id: "fvg-ttrades", title: "Understanding Fair Value Gaps", creator: "TTrades", runtime: "26 min" },
-      { id: "fvg-simplified", title: "Fair Value Gap Simplified", creator: "ICT Training Lab", runtime: "19 min" },
-      { id: "fvg-ict", title: "ICT FVG lesson", creator: "ICT", runtime: "38 min" }
+      {
+        id: "fvg-ttrades-intro",
+        title: "Intro to Market Structure Shifts, Fair Value Gaps, and Displacement",
+        creator: "TTrades",
+        runtime: "TTrades lesson",
+        url: "https://www.youtube.com/watch?v=PePk1V0Q4QQ",
+        concepts: ["FVG creation", "displacement relationship"],
+        whyRequired: "This video is required because FVGs should be tied to displacement rather than treated as random gaps.",
+        requiredQuiz: "FVG Fundamentals"
+      },
+      {
+        id: "fvg-ict-lesson",
+        title: "ICT Fair Value Gap Lesson",
+        creator: "ICT",
+        runtime: "ICT lesson",
+        url: "https://www.youtube.com/watch?v=GFdWahZUNOw",
+        concepts: ["premium FVG", "discount FVG", "mitigation"],
+        whyRequired: "This ICT lesson is required to understand FVG quality, mitigation, and location in premium or discount.",
+        requiredQuiz: "Advanced FVG Recognition"
+      }
     ],
     chartDrillsRequired: 40,
     replayRequired: 10,
@@ -1019,8 +1070,16 @@ export const certificationModules: CertificationModule[] = [
     model: "IFVG",
     certification: "IFVG CERTIFIED",
     videos: [
-      { id: "ifvg-ttrades", title: "Inversion Fair Value Gaps", creator: "TTrades", runtime: "27 min" },
-      { id: "ifvg-trade", title: "How To Actually Trade IFVGs", creator: "TTrades", runtime: "31 min" }
+      {
+        id: "ifvg-ttrades",
+        title: "Inversion Fair Value Gaps (IFVG) - ICT Concepts",
+        creator: "TTrades",
+        runtime: "10 min",
+        url: "https://www.youtube.com/watch?v=uDJI2AbyyCs",
+        concepts: ["failed FVG", "inversion", "opposite-side retest", "consequent encroachment"],
+        whyRequired: "This video is required because IFVG starts with recognizing when a valid FVG fails and changes role.",
+        requiredQuiz: "IFVG Fundamentals Quiz"
+      }
     ],
     chartDrillsRequired: 30,
     replayRequired: 8,
@@ -1036,7 +1095,18 @@ export const certificationModules: CertificationModule[] = [
     level: "Intermediate",
     model: "BPR",
     certification: "BPR CERTIFIED",
-    videos: [{ id: "bpr-core", title: "Balanced Price Range certification lesson", creator: "ICT Training Lab", runtime: "24 min" }],
+    videos: [
+      {
+        id: "bpr-core",
+        title: "ICT Concepts - Balanced Price Ranges",
+        creator: "RealTraderTim",
+        runtime: "13 min",
+        url: "https://www.youtube.com/watch?v=G9YjagfYKog",
+        concepts: ["opposing imbalances", "balanced price range", "overlap refinement", "failed BPRs"],
+        whyRequired: "This video is required because BPR recognition depends on seeing how opposing deliveries rebalance price, not just drawing a generic box.",
+        requiredQuiz: "BPR Recognition Quiz"
+      }
+    ],
     chartDrillsRequired: 25,
     replayRequired: 6,
     examCharts: 40,
@@ -1051,7 +1121,28 @@ export const certificationModules: CertificationModule[] = [
     level: "Intermediate",
     model: "OrderBlock",
     certification: "ORDER BLOCKS CERTIFIED",
-    videos: [{ id: "ob-core", title: "Order Blocks certification lesson", creator: "ICT Training Lab", runtime: "32 min" }],
+    videos: [
+      {
+        id: "ob-ttrades-simplified",
+        title: "Order Blocks Simplified - ICT Concepts",
+        creator: "TTrades",
+        runtime: "15 min",
+        url: "https://www.youtube.com/watch?v=DMUiDBnTYc8",
+        concepts: ["order block validation", "liquidity sweep", "displacement", "mean threshold", "mitigation"],
+        whyRequired: "This video is required because order blocks should be selected after displacement and structure, not by marking random candles.",
+        requiredQuiz: "Order Block Fundamentals Quiz"
+      },
+      {
+        id: "ob-ttrades-irl-erl",
+        title: "Trading IRL & ERL With Order Blocks! - ICT Concepts",
+        creator: "TTrades",
+        runtime: "14 min",
+        url: "https://www.youtube.com/watch?v=TfHlNgAZ_II",
+        concepts: ["internal range liquidity", "external range liquidity", "order blocks", "higher-timeframe bias"],
+        whyRequired: "This video is required because it connects order blocks to the IRL-to-ERL narrative instead of treating them as isolated zones.",
+        requiredQuiz: "Order Block Context Quiz"
+      }
+    ],
     chartDrillsRequired: 35,
     replayRequired: 8,
     examCharts: 50,
@@ -1066,7 +1157,28 @@ export const certificationModules: CertificationModule[] = [
     level: "Intermediate",
     model: "Breaker",
     certification: "BREAKER BLOCKS CERTIFIED",
-    videos: [{ id: "breaker-core", title: "Breaker Blocks certification lesson", creator: "ICT Training Lab", runtime: "34 min" }],
+    videos: [
+      {
+        id: "breaker-ttrades",
+        title: "Breaker Blocks Simplified - ICT Concepts",
+        creator: "TTrades",
+        runtime: "13 min",
+        url: "https://www.youtube.com/watch?v=75S4vwD4P1U",
+        concepts: ["bullish breaker", "bearish breaker", "failed structure", "unicorn model", "breaker vs order block"],
+        whyRequired: "This video is required because breaker blocks are failed-structure stories, not ordinary support and resistance.",
+        requiredQuiz: "Breaker Block Fundamentals Quiz"
+      },
+      {
+        id: "breaker-ict-advanced",
+        title: "ICT Mentorship 2023 - Advanced Theory On ICT Breaker",
+        creator: "ICT",
+        runtime: "ICT mentorship lesson",
+        url: "https://www.youtube.com/watch?v=1HtRfFYiwO0",
+        concepts: ["advanced breaker theory", "failed order blocks", "invalidation", "context"],
+        whyRequired: "This ICT lesson is required to compare simplified breaker mechanics against ICT's broader advanced breaker framework.",
+        requiredQuiz: "Advanced Breaker Recognition Quiz"
+      }
+    ],
     chartDrillsRequired: 35,
     replayRequired: 8,
     examCharts: 50,
@@ -1081,7 +1193,16 @@ export const certificationModules: CertificationModule[] = [
     level: "Advanced",
     model: "PremiumDiscount",
     certification: "PREMIUM DISCOUNT CERTIFIED",
-    videos: [{ id: "pd-core", title: "Premium and Discount certification lesson", creator: "ICT Training Lab", runtime: "26 min" }],
+    videos: [{
+      id: "pd-ttrades",
+      title: "Understanding Premium and Discount in Trading",
+      creator: "TTrades",
+      runtime: "TTrades lesson",
+      url: "https://www.youtube.com/watch?v=MlMsG7li9zY",
+      concepts: ["dealing range", "equilibrium", "premium", "discount", "trade location"],
+      whyRequired: "This curated lesson is required because premium and discount determine whether the setup is forming in a favorable part of the range.",
+      requiredQuiz: "Premium Discount Location Quiz"
+    }],
     chartDrillsRequired: 30,
     replayRequired: 8,
     examCharts: 45,
@@ -1096,7 +1217,16 @@ export const certificationModules: CertificationModule[] = [
     level: "Advanced",
     model: "Sessions",
     certification: "SESSIONS CERTIFIED",
-    videos: [{ id: "sessions-core", title: "Session Highs and Lows certification lesson", creator: "ICT Training Lab", runtime: "29 min" }],
+    videos: [{
+      id: "sessions-ttrades-killzones",
+      title: "Kill Zones Explained: Best Trading Sessions for Entries",
+      creator: "TTrades",
+      runtime: "TTrades lesson",
+      url: "https://www.youtube.com/watch?v=MPeeE55rNOw",
+      concepts: ["Asia range", "London session", "New York AM", "session highs and lows", "killzone timing"],
+      whyRequired: "This lesson is required because session highs and lows only matter when the correct session context and timing are understood.",
+      requiredQuiz: "Session Highs and Lows Quiz"
+    }],
     chartDrillsRequired: 30,
     replayRequired: 10,
     examCharts: 45,
@@ -1111,7 +1241,16 @@ export const certificationModules: CertificationModule[] = [
     level: "Advanced",
     model: "PremiumDiscount",
     certification: "MTF ALIGNMENT CERTIFIED",
-    videos: [{ id: "mtf-core", title: "1H bias, 5m setup, 1m execution", creator: "ICT Training Lab", runtime: "35 min" }],
+    videos: [{
+      id: "mtf-ttrades-alignment",
+      title: "Timeframe Alignment: How To Align Timeframes For Expansion",
+      creator: "TTrades",
+      runtime: "16 min",
+      url: "https://www.youtube.com/watch?v=ubCe509_JLY",
+      concepts: ["higher timeframe point of interest", "setup timeframe", "entry timeframe", "timeframe alignment"],
+      whyRequired: "This video is required because multi-timeframe training depends on linking bias, structure, and entry into one sequence.",
+      requiredQuiz: "MTF Alignment Quiz"
+    }],
     chartDrillsRequired: 35,
     replayRequired: 10,
     examCharts: 60,
@@ -1126,7 +1265,16 @@ export const certificationModules: CertificationModule[] = [
     level: "Advanced",
     model: "FVG",
     certification: "TRADE NARRATIVE CERTIFIED",
-    videos: [{ id: "narrative-core", title: "Full trade narrative certification lesson", creator: "ICT Training Lab", runtime: "42 min" }],
+    videos: [{
+      id: "narrative-ttrades-irl-erl",
+      title: "Trading IRL & ERL With Order Blocks! - ICT Concepts",
+      creator: "TTrades",
+      runtime: "14 min",
+      url: "https://www.youtube.com/watch?v=TfHlNgAZ_II",
+      concepts: ["higher timeframe bias", "IRL to ERL narrative", "entry confirmation", "target selection"],
+      whyRequired: "This video is required because full trade narrative means connecting draw, context, entry, invalidation, and target.",
+      requiredQuiz: "Trade Narrative Construction Quiz"
+    }],
     chartDrillsRequired: 40,
     replayRequired: 12,
     examCharts: 60,
@@ -1140,7 +1288,16 @@ export const certificationModules: CertificationModule[] = [
     title: "Failure Recognition",
     level: "Advanced",
     certification: "FAILURE RECOGNITION CERTIFIED",
-    videos: [{ id: "failure-core", title: "Invalid setup and failure recognition certification", creator: "ICT Training Lab", runtime: "45 min" }],
+    videos: [{
+      id: "failure-ttrades-why-fail",
+      title: "Why Most Traders Fail with ICT: The Power of Focusing on One PD Array",
+      creator: "TTrades",
+      runtime: "TTrades lesson",
+      url: "https://www.youtube.com/watch?v=r_UF8U-hsL8",
+      concepts: ["overcomplication", "PD array selection", "weak narratives", "failure filtering"],
+      whyRequired: "This lesson is required because failure recognition starts with knowing when not to force multiple concepts onto one chart.",
+      requiredQuiz: "Failure Recognition Quiz"
+    }],
     chartDrillsRequired: 50,
     replayRequired: 15,
     examCharts: 75,
@@ -1154,7 +1311,16 @@ export const certificationModules: CertificationModule[] = [
     title: "Master Trader Certification",
     level: "Master",
     certification: "ICT TRAINING LAB MASTER CERTIFIED",
-    videos: [{ id: "master-briefing", title: "Master certification briefing", creator: "ICT Training Lab", runtime: "15 min" }],
+    videos: [{
+      id: "master-ttrades-reversal-sequence",
+      title: "Reversal Sequence (TTRS) - How To Blend PD Arrays",
+      creator: "TTrades",
+      runtime: "17 min",
+      url: "https://www.youtube.com/watch?v=wik00c9_2nk",
+      concepts: ["liquidity", "displacement", "PD arrays", "narrative construction", "execution sequence"],
+      whyRequired: "This capstone lesson is required because Master certification blends concepts into one coherent decision process.",
+      requiredQuiz: "Master Certification Briefing Quiz"
+    }],
     chartDrillsRequired: 100,
     replayRequired: 25,
     examCharts: 100,
@@ -1165,14 +1331,15 @@ export const certificationModules: CertificationModule[] = [
   }
 ];
 
-export function certificationQuizFor(video: { id: string; title: string }, module: CertificationModule): CertificationQuizQuestion[] {
+export function certificationQuizFor(video: { id: string; title: string; requiredQuiz?: string }, module: CertificationModule): CertificationQuizQuestion[] {
   const topics = module.examTopics.length ? module.examTopics : [module.title];
+  const quizName = video.requiredQuiz ?? `${module.title} Video Quiz`;
   return Array.from({ length: 10 }, (_, index) => {
     const topic = topics[index % topics.length];
     const correct = `Apply ${topic} using context, confirmation, and invalidation.`;
     return {
       id: `${video.id}-q-${index + 1}`,
-      prompt: `${module.title}: how should you interpret "${topic}" after studying ${video.title}?`,
+      prompt: `${quizName}: how should you interpret "${topic}" after studying ${video.title}?`,
       choices: [
         correct,
         "Treat the pattern as a guaranteed trade signal.",

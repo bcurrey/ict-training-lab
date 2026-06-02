@@ -4,6 +4,8 @@ const resultKey = "ict-training-lab-results";
 const annotationKey = "ict-training-lab-annotations";
 const certificationKey = "ict-training-lab-certification-progress";
 const bookmarkKey = "ict-training-lab-bookmarks";
+const quizProgressKey = "ict-training-lab-quiz-progress";
+const trainingSessionKey = "ict-training-lab-training-session";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -57,6 +59,22 @@ export function loadBookmarks() {
 
 export function saveBookmarks(bookmarks: BookmarkItem[]) {
   write(bookmarkKey, bookmarks);
+}
+
+export function loadQuizProgress() {
+  return read<Record<string, number>>(quizProgressKey, {});
+}
+
+export function saveQuizProgress(progress: Record<string, number>) {
+  write(quizProgressKey, progress);
+}
+
+export function loadTrainingSession() {
+  return read<{ step: number; started: boolean; updatedAt: string }>(trainingSessionKey, { step: 0, started: false, updatedAt: "" });
+}
+
+export function saveTrainingSession(progress: { step: number; started: boolean; updatedAt: string }) {
+  write(trainingSessionKey, progress);
 }
 
 export function nextReviewDate(correct: boolean, difficulty: number) {
