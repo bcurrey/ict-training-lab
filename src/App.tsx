@@ -47,7 +47,7 @@ import type {
   QuizResult
 } from "./types";
 
-type Page = "start" | "orientation" | "today" | "learn" | "chartLab" | "replay" | "review" | "progress" | "upload" | "flaw" | "mtf" | "narrative" | "library" | "quiz" | "paths" | "about" | "phone";
+type Page = "start" | "orientation" | "today" | "learn" | "chartLab" | "replay" | "review" | "progress" | "upload" | "more" | "flaw" | "mtf" | "narrative" | "library" | "quiz" | "paths" | "about" | "phone";
 
 const nav = [
   { page: "orientation" as const, label: "Orientation", icon: HelpCircle },
@@ -61,6 +61,14 @@ const nav = [
   { page: "upload" as const, label: "Upload", icon: ImagePlus }
 ];
 
+const mobileNav = [
+  { page: "start" as const, label: "Home", icon: Home },
+  { page: "today" as const, label: "Train", icon: Target },
+  { page: "chartLab" as const, label: "Drills", icon: ScanSearch },
+  { page: "replay" as const, label: "Replay", icon: Play },
+  { page: "more" as const, label: "More", icon: Layers3 }
+];
+
 const pageTitles: Record<Page, string> = {
   start: "Start Here",
   orientation: "Orientation",
@@ -71,6 +79,7 @@ const pageTitles: Record<Page, string> = {
   review: "Review",
   progress: "Progress",
   upload: "Upload",
+  more: "More",
   flaw: "Spot the Flaw",
   mtf: "Multi-Timeframe",
   narrative: "Trade Narrative",
@@ -554,6 +563,25 @@ function CertificationTracker({ progress, setPage }: { progress: CertificationPr
   );
 }
 
+function CertificationMiniProgress({ progress }: { progress: CertificationProgress }) {
+  const module = getCertificationModule(liquidityModuleId);
+  const stats = moduleStats(module, progress);
+  const steps: Array<[string, boolean]> = [
+    ["Watch Video", stats.watched > 0],
+    ["Quiz", stats.quizPassed > 0],
+    ["Drill", stats.drills > 0],
+    ["Replay", stats.replays > 0],
+    ["Review", true],
+    ["Final Exam", stats.exam >= module.passingScore]
+  ];
+  return (
+    <section className="panel mini-progress">
+      <div><strong>Liquidity Certification</strong><span>{stats.completion}% complete</span></div>
+      <div className="session-progress">{steps.map(([label, done]) => <span className={cls(done && "done")} key={String(label)}>{done ? "Done" : "Open"} {label}</span>)}</div>
+    </section>
+  );
+}
+
 function OrientationPage({ setPage }: { setPage: (page: Page) => void }) {
   const loop = ["Lesson", "Quiz", "Drill", "Replay", "Review", "Certification"];
   return (
@@ -585,6 +613,16 @@ function OrientationPage({ setPage }: { setPage: (page: Page) => void }) {
       <section className="panel">
         <div className="section-title"><div><span>Boundaries</span><h2>What this app is not</h2></div></div>
         <div className="onboarding-grid">{["Not a signal service", "Not a trade copier", "Not an alert service", "Not financial advice", "Not a prediction engine"].map((item) => <article key={item}><strong>{item}</strong><p>It teaches context and recognition; it does not tell you what to trade.</p></article>)}</div>
+      </section>
+      <section className="panel">
+        <div className="section-title"><div><span>Certifications</span><h2>How unlocking works</h2></div></div>
+        <div className="mode-list">
+          <p><strong>Complete in under 3 minutes:</strong> read this page, then start Liquidity.</p>
+          <p><strong>Certification means performance:</strong> watch required videos, pass quizzes, complete drills, complete replay, and pass the final exam.</p>
+          <p><strong>Locked concepts stay locked:</strong> Displacement unlocks only after Liquidity Certification is complete.</p>
+          <p><strong>Chart drills:</strong> mark the chart first, then compare against trainer markup. The goal is recognition, not prediction.</p>
+          <p><strong>Replay:</strong> future candles are hidden so you practice reading the setup before hindsight.</p>
+        </div>
       </section>
     </div>
   );
@@ -707,7 +745,7 @@ function ChartTrainingMode({ scenarios, results, setResults, saveAnnotation, boo
         </div>
         <section className="mode-help drill-instructions">
           <strong>How to complete a chart drill</strong>
-          <p>Read the question, choose the tool, mark the chart, submit your answer, then compare against trainer markup.</p>
+          <p>First drill walkthrough: spend 60 seconds reading this box. Then read the question, choose the tool, mark the chart, submit your answer, and compare against trainer markup.</p>
           <div className="tool-guide">
             <span><strong>Marker:</strong> exact points.</span>
             <span><strong>Arrow:</strong> candle or reaction.</span>
@@ -952,6 +990,18 @@ function ProgressEnhancements({ results, progress, setProgress, bookmarks }: { r
   const drillResults = results.filter((result) => result.mode === "chart" || result.mode === "spotFlaw");
   const replayResults = results.filter((result) => result.question.toLowerCase().includes("replay"));
   const certified = certificationModules.filter((module) => moduleStats(module, progress).certified).length;
+  const liquidityCertified = moduleStats(getCertificationModule(liquidityModuleId), progress).certified;
+  if (!liquidityCertified) {
+    return (
+      <div className="page-grid">
+        <section className="panel">
+          <div className="section-title"><div><span>Progress</span><h2>Finish Liquidity Certification first</h2></div></div>
+          <p className="definition">Advanced dashboards stay hidden until the foundation is complete. For now, focus only on the requirements below.</p>
+        </section>
+        <CertificationPath progress={progress} setProgress={setProgress} />
+      </div>
+    );
+  }
   return (
     <div className="page-grid">
       <CertificationPath progress={progress} setProgress={setProgress} />
@@ -1016,8 +1066,26 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
     const pool = quizQuestions.filter((question) => (quizFilter === "all" || question.model === quizFilter) && (mode === "mastery" || question.mode === mode) && (difficulty === "all" || question.difficulty === difficulty));
     return pool.length ? pool : quizQuestions.filter((question) => mode === "mastery" || question.mode === mode);
   }, [quizFilter, mode, difficulty]);
-  const question = filtered[index % filtered.length];
-  const quizScenario = chartScenarios.filter((scenario) => scenario.model === question.model && scenario.mode === (question.mode === "whyNot" ? "invalid" : "recognition"))[index % Math.max(1, chartScenarios.filter((scenario) => scenario.model === question.model && scenario.mode === (question.mode === "whyNot" ? "invalid" : "recognition")).length)] ?? chartScenarios.find((scenario) => scenario.model === question.model) ?? chartScenarios[0];
+  const scenarioPool = useMemo(() => {
+    const wantedMode = mode === "whyNot" ? "invalid" : "recognition";
+    const pool = chartScenarios.filter((scenario) => (quizFilter === "all" || scenario.model === quizFilter) && scenario.mode === wantedMode && (difficulty === "all" || scenario.difficulty === difficulty) && scenario.callouts.length > 0);
+    return pool.length ? pool : chartScenarios.filter((scenario) => scenario.mode === wantedMode && scenario.callouts.length > 0);
+  }, [quizFilter, mode, difficulty]);
+  const quizScenario = scenarioPool[index % scenarioPool.length] ?? chartScenarios[0];
+  const fallbackQuestion = filtered[index % filtered.length];
+  const question: QuizQuestion = {
+    id: `scenario-${quizScenario.id}`,
+    model: quizScenario.model,
+    mode: quizScenario.mode === "invalid" ? "whyNot" : "multiple",
+    difficulty: quizScenario.difficulty,
+    prompt: quizScenario.prompt,
+    choices: quizScenario.choices,
+    answer: quizScenario.answer,
+    explanation: quizScenario.explanation,
+    concept: `${modelLabels[quizScenario.model]} recognition on the displayed chart`,
+    mistakePrevented: quizScenario.mistakeTrained ?? "trusting a label before checking the chart evidence.",
+    wrongAnswers: Object.fromEntries(quizScenario.choices.filter((choice) => choice !== quizScenario.answer).map((choice) => [choice, `The trainer markup on this chart supports ${quizScenario.answer}, not ${choice}. Check the marked liquidity, structure, and invalidation.`]))
+  };
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   useEffect(() => {
@@ -1028,7 +1096,7 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
 
   const answer = (choice: string) => {
     const correct = choice === question.answer;
-    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), elapsedMs: Date.now() - startedAt };
+    const result: QuizResult = { id: crypto.randomUUID(), model: question.model, mode: fallbackQuestion?.mode ?? question.mode, question: question.prompt, myAnswer: choice, correctAnswer: question.answer, explanation: question.explanation, result: correct ? "correct" : "incorrect", difficulty: question.difficulty, dateCompleted: todayIso(), nextReviewDate: nextReviewDate(correct, question.difficulty), elapsedMs: Date.now() - startedAt };
     const next = [result, ...results];
     setResults(next);
     saveResults(next);
@@ -1163,7 +1231,7 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
   const hasCompletedVideo = liquidityModule.videos.some((video) => certificationProgress.watchedVideos[video.id]);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
-  const steps = ["Watch Video", "Pass Quiz", "Complete Drill", "Complete Replay", "Review Mistakes", "Summary"];
+  const steps = ["Watch Video", "Pass Quiz", "Complete Drill", "Complete Replay", "Review Mistakes", "Final Exam"];
   const current = steps[step];
   const requirements = [
     `Watch ${liquidityModule.videos.length} videos`,
@@ -1223,9 +1291,9 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
         {!started && (
           <div className="step-ready">
             <strong>{current}</strong>
-            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Pass the quiz for the lesson you just completed." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed answers." : "Check your Liquidity progress and the next certification requirement."}</p>
+            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Pass the quiz for the lesson you just completed." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed answers." : "Check what remains before the Liquidity final exam unlocks."}</p>
             {stepBlocked && <div className="mode-help"><strong>Prerequisite</strong><p>Complete the video step first. The quiz unlocks automatically after the lesson is saved.</p></div>}
-            <button className="primary-button solo-action" disabled={stepBlocked} onClick={beginStep}>{step === 0 ? "Start Lesson" : step === 1 ? "Start Quiz" : step === 2 ? "Start Drill" : step === 3 ? "Start Replay" : "Begin Step"}</button>
+            <button className="primary-button solo-action" disabled={stepBlocked} onClick={beginStep}>{step === 0 ? "Start Lesson" : step === 1 ? "Start Quiz" : step === 2 ? "Start Drill" : step === 3 ? "Start Replay" : step === 4 ? "Start Review" : "View Certification Progress"}</button>
           </div>
         )}
       </section>
@@ -1236,11 +1304,11 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
       {started && step === 4 && <><ReviewQueue results={results} onPractice={startQuiz} /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Review</button></>}
       {started && step === 5 && (
         <section className="panel">
-          <div className="section-title"><div><span>Session summary</span><h2>Training complete</h2></div></div>
+          <div className="section-title"><div><span>Final Exam</span><h2>Liquidity certification progress</h2></div></div>
           <ProgressSummary results={results} />
           <div className="score-grid"><span><strong>Liquidity attempts</strong><b>{liquidityResults.length}</b></span><span><strong>Liquidity accuracy</strong><b>{liquidityAccuracy}%</b></span><span><strong>Certification progress</strong><b>{liquidity.completion}%</b></span></div>
           <div className="mode-list">{requirements.map((item) => <p key={item}><strong>{item}</strong></p>)}</div>
-          <div className="answer-panel"><strong>Next best rep</strong><p>{liquidity.certified ? "Liquidity is certified. Move to Displacement only after reviewing any high-confidence misses." : "Repeat Liquidity drills until you can identify the pool, raid, and invalidation without guessing."}</p></div>
+          <div className="answer-panel"><strong>{liquidity.certified ? "Certified" : "Final exam locked"}</strong><p>{liquidity.certified ? "Liquidity is certified. Displacement is now the next concept." : "The final exam unlocks after all videos, quizzes, 10 drills, and 3 replays are complete. Your next action is the first incomplete requirement above."}</p></div>
         </section>
       )}
     </div>
@@ -1482,6 +1550,32 @@ function PhoneHelp({ setPage }: { setPage: (page: Page) => void }) {
   );
 }
 
+function MorePage({ setPage, liquidityCertified }: { setPage: (page: Page) => void; liquidityCertified: boolean }) {
+  const items: Array<[Page, string, string]> = [
+    ["orientation", "Orientation", "What the app is, what it is not, and how to use each tab."],
+    ["learn", "Learn", "Liquidity reference, required videos, notes, and checklists."],
+    ["review", "Review", "Repeat missed questions and weak concepts."],
+    ["progress", "Progress", liquidityCertified ? "Analytics, certifications, weak areas, and mastery." : "Liquidity certification requirements and locked concepts."],
+    ["upload", "Upload", "Upload personal chart screenshots for self-grading."],
+    ["phone", "Use on Phone", "Install and access instructions."]
+  ];
+  return (
+    <div className="page-grid">
+      <section className="panel">
+        <div className="section-title"><div><span>More</span><h2>Secondary tools</h2></div></div>
+        <div className="tab-guide">
+          {items.map(([pageId, title, body]) => (
+            <button className="more-item" key={pageId} onClick={() => setPage(pageId)}>
+              <strong>{title}</strong>
+              <span>{body}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function App() {
   const [page, setPage] = useState<Page>("orientation");
   const [results, setResults] = useState<QuizResult[]>(loadResults);
@@ -1491,6 +1585,7 @@ export function App() {
   const [quizModel, setQuizModel] = useState<ModelKey | "all">("all");
   const [beginnerMode, setBeginnerMode] = useState(true);
   const stats = resultStats(results);
+  const liquidityCertified = moduleStats(getCertificationModule(liquidityModuleId), certificationProgress).certified;
 
   const startQuiz = (model?: ModelKey) => {
     setQuizModel(model ?? "all");
@@ -1529,6 +1624,7 @@ export function App() {
 
         {page === "about" && <AboutSystem setPage={setPage} />}
         {page === "phone" && <PhoneHelp setPage={setPage} />}
+        {page === "more" && <MorePage setPage={setPage} liquidityCertified={liquidityCertified} />}
 
         {page === "today" && <TodayTraining setPage={setPage} results={results} setResults={setResults} startQuiz={startQuiz} certificationProgress={certificationProgress} setCertificationProgress={setCertificationProgress} />}
 
@@ -1536,18 +1632,18 @@ export function App() {
 
         {page === "progress" && <ProgressEnhancements results={results} progress={certificationProgress} setProgress={setCertificationProgress} bookmarks={bookmarks} />}
 
-        {page === "chartLab" && <><ModeHelp id="chartLab" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && (!beginnerMode || phaseStatus(results).foundationPassed || scenario.model === "Liquidity"))} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
-        {page === "replay" && <><ModeHelp id="replay" /><ReplayMode results={results} setResults={setResults} /></>}
+        {page === "chartLab" && <><CertificationMiniProgress progress={certificationProgress} /><ModeHelp id="chartLab" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "recognition" && (!beginnerMode || phaseStatus(results).foundationPassed || scenario.model === "Liquidity"))} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
+        {page === "replay" && <><CertificationMiniProgress progress={certificationProgress} /><ModeHelp id="replay" /><ReplayMode results={results} setResults={setResults} /></>}
         {page === "flaw" && <><ModeHelp id="flaw" /><ChartTrainingMode scenarios={chartScenarios.filter((scenario) => scenario.mode === "invalid")} results={results} setResults={setResults} saveAnnotation={saveScenarioAnnotation} bookmarks={bookmarks} setBookmarks={setBookmarks} /></>}
         {page === "mtf" && <div className="page-grid"><ModeHelp id="mtf" /><MtfPanels /><MtfMode results={results} setResults={setResults} /></div>}
         {page === "narrative" && <><ModeHelp id="narrative" /><NarrativeMode results={results} setResults={setResults} /></>}
         {page === "paths" && <div className="page-grid"><LearningPaths results={results} /><RelationshipMap /></div>}
         {page === "library" && <ModelLibrary startQuiz={startQuiz} />}
-        {page === "quiz" && <TextQuiz results={results} setResults={setResults} initialModel={quizModel} />}
+        {page === "quiz" && <><CertificationMiniProgress progress={certificationProgress} /><TextQuiz results={results} setResults={setResults} initialModel={quizModel} /></>}
         {page === "upload" && <><ModeHelp id="upload" /><ImageAnnotationTool annotations={annotations} setAnnotations={setAnnotations} /></>}
         {page === "review" && <><ModeHelp id="review" /><ReviewQueue results={results} onPractice={startQuiz} /></>}
       </main>
-      <nav className="mobile-nav">{nav.map((item) => { const Icon = item.icon; return <button className={cls(page === item.page && "active")} key={item.page} onClick={() => setPage(item.page)}><Icon size={18} /><span>{item.label}</span></button>; })}</nav>
+      <nav className="mobile-nav">{mobileNav.map((item) => { const Icon = item.icon; return <button className={cls((page === item.page || (item.page === "more" && !mobileNav.some((navItem) => navItem.page === page))) && "active")} key={item.page} onClick={() => setPage(item.page)}><Icon size={18} /><span>{item.label}</span></button>; })}</nav>
     </div>
   );
 }

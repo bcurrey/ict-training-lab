@@ -900,6 +900,37 @@ textarea {
   color: var(--muted);
 }
 
+.mini-progress {
+  display: grid;
+  gap: 10px;
+}
+
+.mini-progress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mini-progress span {
+  color: var(--muted);
+}
+
+.more-item {
+  text-align: left;
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+}
+
+.more-item span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .learn-focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 210px;
@@ -1835,16 +1866,18 @@ details summary {
     padding: 9px 4px;
     border-radius: 0;
     font-size: 0.68rem;
-    min-height: 62px;
+    min-height: 60px;
   }
   .scenario-strip {
-    display: flex;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow-x: hidden;
     max-height: none;
     padding-bottom: 4px;
   }
   .scenario-strip button {
-    min-width: 230px;
+    min-width: 0;
+    width: 100%;
   }
   .chart-toolbar {
     position: sticky;
@@ -1899,18 +1932,20 @@ details summary {
     min-height: 300px;
   }
   .chart-canvas {
-    overflow: auto;
+    overflow: hidden;
     overscroll-behavior: contain;
-    touch-action: pan-x pan-y pinch-zoom;
+    touch-action: manipulation;
   }
   .chart-canvas svg {
-    min-width: 680px;
+    min-width: 0;
+    width: 100%;
   }
   .compact-chart svg {
     min-width: 0;
   }
   .image-chart img {
-    min-width: 680px;
+    min-width: 0;
+    width: 100%;
   }
   .compact-chart img {
     min-width: 0;
@@ -1983,9 +2018,13 @@ details summary {
   .mvp-focus-card,
   .learn-focus,
   .quiz-mission,
+  .mini-progress > div:first-child,
   .roadmap-list article,
   .compact-roadmap {
     grid-template-columns: 1fr;
+  }
+  .mini-progress > div:first-child {
+    display: grid;
   }
   .module-score {
     text-align: left;
@@ -2003,6 +2042,19 @@ details summary {
   .quiz-card,
   .feedback-card {
     padding: 14px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .quiz-card h2,
+  .feedback-card h2,
+  .section-title h2 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .choice-grid button {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
   }
   main {
     padding: 14px 12px 142px;
