@@ -1,4 +1,4 @@
-import type { Candle, CertificationModule, CertificationQuizQuestion, ChartScenario, Difficulty, ICTModel, LearningPath, ModelKey, QuizQuestion } from "./types";
+import type { Candle, CertificationModule, CertificationQuizQuestion, ChartQuestion, ChartScenario, Difficulty, ICTModel, LearningPath, ModelKey, QuizQuestion } from "./types";
 
 export const modelOrder: ModelKey[] = [
   "MSS",
@@ -217,7 +217,7 @@ function validInvalidForModel(model: ICTModel, index: number): QuizQuestion {
     difficulty: ((index % 5) + 1) as Difficulty,
     prompt: valid
       ? `${model.shortName}: ${model.validates[index % model.validates.length]} appears after a clear contextual setup. Does it qualify?`
-      : `${model.shortName}: the chart has ${invalidator.toLowerCase()} and no follow-through. Does it qualify?`,
+      : `${model.shortName}: a described example has ${invalidator.toLowerCase()} and no follow-through. Does it qualify?`,
     choices: ["Valid", "Invalid"],
     answer: valid ? "Valid" : "Invalid",
     explanation: valid
@@ -561,6 +561,64 @@ function makeCandles(seed: number, count = 42, bias: "up" | "down" | "range" = "
 
 const baseChartScenarios: ChartScenario[] = [
   {
+    id: "chart-liquidity-buyside-sweep",
+    title: "Buy-side liquidity sweep above equal highs",
+    model: "Liquidity",
+    market: "NQ",
+    mode: "recognition",
+    difficulty: 1,
+    exampleType: "textbook",
+    isValid: true,
+    prompt: "What liquidity was targeted before rejection?",
+    timeframe: "5m",
+    htfBias: "Price is testing a visible pool of equal highs after an intraday rally.",
+    setupFrame: "5m",
+    executionFrame: "1m",
+    candles: makeCandles(21, 45, "down"),
+    revealIndex: 24,
+    answer: "Buy-side liquidity",
+    choices: ["Buy-side liquidity", "Sell-side liquidity", "Bullish FVG", "Discount"],
+    explanation: "The chart marks equal highs above price, a run above those highs, and rejection back below the level. That is buy-side liquidity being raided, not sell-side liquidity.",
+    mistakeTrained: "Calling a raid above equal highs a random breakout instead of identifying the buy stops being targeted.",
+    tags: ["buy-side liquidity", "equal highs", "sweep", "rejection", "liquidity sweep"],
+    requiredVisibleFeatures: ["equal highs", "sweep above highs", "rejection", "buy-side liquidity"],
+    callouts: [
+      { id: "liq-buy-eq-highs", label: "equal highs", x: 36, y: 30, type: "rectangle", width: 22, height: 8 },
+      { id: "liq-buy-sweep", label: "sweep above highs", x: 62, y: 23, type: "marker" },
+      { id: "liq-buy-reject", label: "rejection", x: 70, y: 37, type: "arrow", x2: 75, y2: 49 },
+      { id: "liq-buy-side", label: "buy-side liquidity", x: 44, y: 24, type: "marker" }
+    ]
+  },
+  {
+    id: "chart-liquidity-sellside-sweep",
+    title: "Sell-side liquidity sweep below equal lows",
+    model: "Liquidity",
+    market: "NQ",
+    mode: "recognition",
+    difficulty: 1,
+    exampleType: "textbook",
+    isValid: true,
+    prompt: "What liquidity was targeted before price displaced upward?",
+    timeframe: "5m",
+    htfBias: "Price trades below a visible pool of equal lows before rejecting upward.",
+    setupFrame: "5m",
+    executionFrame: "1m",
+    candles: makeCandles(22, 42, "up"),
+    revealIndex: 24,
+    answer: "Sell-side liquidity",
+    choices: ["Sell-side liquidity", "Buy-side liquidity", "Bearish FVG", "Premium"],
+    explanation: "The chart marks equal lows below price, a sweep beneath them, and rejection back above the level. That is sell-side liquidity being raided.",
+    mistakeTrained: "Confusing a sweep below equal lows with bearish continuation before checking rejection.",
+    tags: ["sell-side liquidity", "equal lows", "sweep", "rejection", "liquidity sweep"],
+    requiredVisibleFeatures: ["equal lows", "sweep below lows", "rejection", "sell-side liquidity"],
+    callouts: [
+      { id: "liq-sell-eq-lows", label: "equal lows", x: 31, y: 71, type: "rectangle", width: 24, height: 8 },
+      { id: "liq-sell-sweep", label: "sweep below lows", x: 58, y: 80, type: "marker" },
+      { id: "liq-sell-reject", label: "rejection", x: 67, y: 64, type: "arrow", x2: 74, y2: 46 },
+      { id: "liq-sell-side", label: "sell-side liquidity", x: 41, y: 77, type: "marker" }
+    ]
+  },
+  {
     id: "chart-mss-raid",
     title: "Sell-side raid into bullish MSS",
     model: "MSS",
@@ -855,6 +913,79 @@ const generatedChartScenarios = models.flatMap((model) => [
 ]);
 
 export const chartScenarios: ChartScenario[] = [...baseChartScenarios, ...generatedChartScenarios];
+
+const scenarioById = (id: string) => chartScenarios.find((scenario) => scenario.id === id);
+
+export const chartQuestions: ChartQuestion[] = [
+  {
+    id: "chart-q-liq-buy-1",
+    concept: "Liquidity",
+    difficulty: 1,
+    chartScenarioId: "chart-liquidity-buyside-sweep",
+    prompt: "What liquidity was targeted on this chart?",
+    answerChoices: ["Buy-side liquidity", "Sell-side liquidity", "Bullish FVG", "Discount"],
+    correctAnswer: "Buy-side liquidity",
+    explanation: "The equal highs created a pool of buy stops. Price traded above those highs and rejected, so the targeted pool was buy-side liquidity.",
+    whyWrong: {
+      "Sell-side liquidity": "Sell-side liquidity rests below lows, not above equal highs.",
+      "Bullish FVG": "A Fair Value Gap is an imbalance. The marked feature being targeted is liquidity above highs.",
+      "Discount": "Discount is location within a dealing range, not the liquidity pool being raided."
+    },
+    trainerMarkup: scenarioById("chart-liquidity-buyside-sweep")?.callouts ?? [],
+    requiredVisibleFeatures: ["equal highs", "sweep above highs", "rejection", "buy-side liquidity"]
+  },
+  {
+    id: "chart-q-liq-sell-1",
+    concept: "Liquidity",
+    difficulty: 1,
+    chartScenarioId: "chart-liquidity-sellside-sweep",
+    prompt: "What liquidity was targeted on this chart?",
+    answerChoices: ["Sell-side liquidity", "Buy-side liquidity", "Bearish FVG", "Premium"],
+    correctAnswer: "Sell-side liquidity",
+    explanation: "The equal lows created a pool of sell stops. Price traded below those lows and rejected upward, so the targeted pool was sell-side liquidity.",
+    whyWrong: {
+      "Buy-side liquidity": "Buy-side liquidity rests above highs, not below equal lows.",
+      "Bearish FVG": "A Fair Value Gap is an imbalance. The marked feature being targeted is liquidity below lows.",
+      "Premium": "Premium is location within a dealing range, not the liquidity pool being raided."
+    },
+    trainerMarkup: scenarioById("chart-liquidity-sellside-sweep")?.callouts ?? [],
+    requiredVisibleFeatures: ["equal lows", "sweep below lows", "rejection", "sell-side liquidity"]
+  },
+  {
+    id: "chart-q-mss-1",
+    concept: "MSS",
+    difficulty: 2,
+    chartScenarioId: "chart-mss-raid",
+    prompt: "Which structure event is marked after the sell-side liquidity sweep?",
+    answerChoices: ["MSS", "BOS", "IFVG", "No valid structure event"],
+    correctAnswer: "MSS",
+    explanation: "The trainer markup shows sell-side liquidity taken first, then displacement through the relevant swing. That sequence supports an MSS read.",
+    whyWrong: {
+      "BOS": "BOS is continuation structure. This chart is training reversal structure after liquidity is swept.",
+      "IFVG": "An IFVG requires a failed Fair Value Gap and opposite-side retest, which is not the marked feature.",
+      "No valid structure event": "The chart includes the liquidity sweep and the marked MSS leg, so the structure event is present."
+    },
+    trainerMarkup: scenarioById("chart-mss-raid")?.callouts ?? [],
+    requiredVisibleFeatures: ["sell-side liquidity", "MSS", "FVG"]
+  },
+  {
+    id: "chart-q-fvg-1",
+    concept: "FVG",
+    difficulty: 1,
+    chartScenarioId: "chart-fvg-clean",
+    prompt: "Which imbalance is the trainer marking on this chart?",
+    answerChoices: ["FVG", "IFVG", "Breaker", "No imbalance"],
+    correctAnswer: "FVG",
+    explanation: "The marked rectangle sits inside the displacement leg and identifies the Fair Value Gap created by that delivery.",
+    whyWrong: {
+      "IFVG": "An IFVG requires a valid FVG to fail and invert. This chart is marking the original FVG.",
+      "Breaker": "A breaker requires a failed block and retest story, not just an imbalance created by displacement.",
+      "No imbalance": "The trainer markup identifies the imbalance zone directly."
+    },
+    trainerMarkup: scenarioById("chart-fvg-clean")?.callouts ?? [],
+    requiredVisibleFeatures: ["FVG", "displacement"]
+  }
+];
 
 export const learningPaths: LearningPath[] = [
   {

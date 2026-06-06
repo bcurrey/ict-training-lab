@@ -27,7 +27,7 @@ import {
   XCircle,
   Zap
 } from "lucide-react";
-import { certificationModules, certificationQuizFor, chartScenarios, getModel, learningPaths, modelLabels, modelOrder, quizQuestions } from "./data";
+import { certificationModules, certificationQuizFor, chartQuestions, chartScenarios, getModel, learningPaths, modelLabels, modelOrder, quizQuestions } from "./data";
 import { loadAnnotations, loadBookmarks, loadCertificationProgress, loadQuizProgress, loadResults, loadTrainingSession, nextReviewDate, saveAnnotations, saveBookmarks, saveCertificationProgress, saveQuizProgress, saveResults, saveTrainingSession } from "./storage";
 import type {
   AnnotationMarker,
@@ -37,6 +37,7 @@ import type {
   CertificationModule,
   CertificationProgress,
   CertificationQuizQuestion,
+  ChartQuestion,
   ChartAnnotation,
   ChartCallout,
   ChartScenario,
@@ -84,7 +85,7 @@ const pageTitles: Record<Page, string> = {
   mtf: "Multi-Timeframe",
   narrative: "Trade Narrative",
   library: "Model Library",
-  quiz: "Text Quiz",
+  quiz: "Concept Quiz",
   paths: "Learning Paths",
   about: "About",
   phone: "Use on Phone"
@@ -261,6 +262,17 @@ function DifficultyBadge({ level }: { level: Difficulty }) {
   return <span className={`difficulty difficulty-${level}`}>{labels[level]}</span>;
 }
 
+function ConceptDifficultyBadge({ level }: { level: Difficulty }) {
+  const labels = {
+    1: "L1 Definition",
+    2: "L2 Understanding",
+    3: "L3 Application",
+    4: "L4 Decision Logic",
+    5: "L4 Decision Logic"
+  };
+  return <span className={`difficulty difficulty-${level}`}>{labels[level]}</span>;
+}
+
 function ModeHelp({ id }: { id: keyof typeof modeHelp }) {
   return <section className="mode-help"><strong>{pageTitles[id as Page]}</strong><p>{modeHelp[id]}</p></section>;
 }
@@ -373,6 +385,12 @@ function validatedChartForQuestion(question: QuizQuestion) {
   if (!question.requiresChart || !question.chartScenarioId) return null;
   const scenario = chartScenarios.find((item) => item.id === question.chartScenarioId);
   if (!scenario) return null;
+  return chartScenarioHasFeatures(scenario, question.requiredVisibleFeatures) ? scenario : null;
+}
+
+function validatedChartForChartQuestion(question: ChartQuestion) {
+  const scenario = chartScenarios.find((item) => item.id === question.chartScenarioId);
+  if (!scenario || !question.trainerMarkup.length) return null;
   return chartScenarioHasFeatures(scenario, question.requiredVisibleFeatures) ? scenario : null;
 }
 
@@ -588,7 +606,8 @@ function CertificationMiniProgress({ progress }: { progress: CertificationProgre
   const stats = moduleStats(module, progress);
   const steps: Array<[string, boolean]> = [
     ["Watch Video", stats.watched > 0],
-    ["Quiz", stats.quizPassed > 0],
+    ["Concept Quiz", stats.quizPassed > 0],
+    ["Chart Quiz", false],
     ["Drill", stats.drills > 0],
     ["Replay", stats.replays > 0],
     ["Review", true],
@@ -1083,12 +1102,11 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
   const [feedback, setFeedback] = useState<{ result: QuizResult; question: QuizQuestion } | null>(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const filtered = useMemo(() => {
-    const renderable = quizQuestions.filter((question) => !question.requiresChart || Boolean(validatedChartForQuestion(question)));
+    const renderable = quizQuestions.filter((question) => !question.requiresChart);
     const pool = renderable.filter((question) => (quizFilter === "all" || question.model === quizFilter) && (mode === "mastery" || question.mode === mode) && (difficulty === "all" || question.difficulty === difficulty));
     return pool.length ? pool : renderable.filter((question) => mode === "mastery" || question.mode === mode);
   }, [quizFilter, mode, difficulty]);
   const question = filtered[index % filtered.length];
-  const quizScenario = validatedChartForQuestion(question);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
   useEffect(() => {
@@ -1126,13 +1144,78 @@ function TextQuiz({ results, setResults, initialModel }: { results: QuizResult[]
         <select value={mode} onChange={(event) => setMode(event.target.value as QuizQuestion["mode"] | "mastery")}><option value="mastery">Mixed mastery</option><option value="multiple">Multiple choice</option><option value="valid">Valid / Invalid</option><option value="sequence">Sequence</option><option value="whyNot">Why Not</option></select>
         <select value={difficulty} onChange={(event) => setDifficulty(event.target.value === "all" ? "all" : Number(event.target.value) as Difficulty)}><option value="all">All levels</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option></select>
       </section>
-      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2>{quizScenario && <div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts /></div>}<p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why this answer is correct:</strong> {feedback.result.explanation}</p>{feedback.result.result === "incorrect" && <p><strong>Why your answer is wrong:</strong> {feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p>}<p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this concept"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
+      {feedback ? <section className={cls("feedback-card", feedback.result.result)}><h2>{feedback.result.result === "correct" ? "Correct. Lock in the reasoning." : "Review this one carefully."}</h2><p><strong>Your answer:</strong> {feedback.result.myAnswer}</p><p><strong>Correct answer:</strong> {feedback.result.correctAnswer}</p><p><strong>Why this answer is correct:</strong> {feedback.result.explanation}</p>{feedback.result.result === "incorrect" && <p><strong>Why your answer is wrong:</strong> {feedback.question.wrongAnswers?.[feedback.result.myAnswer] ?? "That answer skips a required condition, confuses a related model, or treats the label as a trade signal."}</p>}<p><strong>Why the other answers are wrong:</strong> {(feedback.question.choices ?? []).filter((choice) => choice !== feedback.question.answer).map((choice) => `${choice}: ${feedback.question.wrongAnswers?.[choice] ?? "not the best read for this concept"}`).join(" ")}</p><p><strong>Concept trained:</strong> {feedback.question.concept ?? `${modelLabels[feedback.question.model]} recognition`}</p><p><strong>Mistake this prevents:</strong> {feedback.question.mistakePrevented ?? "over-labeling weak structure without context."}</p><button className="primary-button" onClick={nextQuestion}>Next question</button></section> : (
         <section className="quiz-card">
-          <div className="quiz-meta"><span>{modelLabels[question.model]} - {question.mode}</span><DifficultyBadge level={question.difficulty} /></div>
+          <div className="quiz-meta"><span>{modelLabels[question.model]} - Concept Quiz</span><ConceptDifficultyBadge level={question.difficulty} /></div>
           <h2>{question.prompt}</h2>
-          {quizScenario && <div className="quiz-chart-example"><ChartPreview scenario={quizScenario} showCallouts={false} /></div>}
           <div className="choice-grid">{(question.choices ?? question.sequence ?? []).map((choice) => <button key={choice} onClick={() => answer(choice)}>{choice}</button>)}</div>
-          <p className="empty">Answer before looking anything up. This is pattern-recognition training, not signal generation.</p>
+          <p className="empty">Concept Quiz is text-only. Answer from terminology, validation logic, sequencing, and decision rules.</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ChartQuiz({ results, setResults, initialModel = "Liquidity" }: { results: QuizResult[]; setResults: (results: QuizResult[]) => void; initialModel?: ModelKey | "all" }) {
+  const [index, setIndex] = useState(0);
+  const [feedback, setFeedback] = useState<{ question: ChartQuestion; scenario: ChartScenario; choice: string; correct: boolean } | null>(null);
+  const [startedAt, setStartedAt] = useState(Date.now());
+  const pool = chartQuestions
+    .map((question) => ({ question, scenario: validatedChartForChartQuestion(question) }))
+    .filter((item): item is { question: ChartQuestion; scenario: ChartScenario } => Boolean(item.scenario))
+    .filter((item) => initialModel === "all" || item.question.concept === initialModel);
+  const active = pool[index % Math.max(pool.length, 1)];
+  const answer = (choice: string) => {
+    if (!active) return;
+    const correct = choice === active.question.correctAnswer;
+    const result: QuizResult = {
+      id: crypto.randomUUID(),
+      model: active.question.concept,
+      mode: "chart",
+      question: active.question.prompt,
+      myAnswer: choice,
+      correctAnswer: active.question.correctAnswer,
+      explanation: active.question.explanation,
+      result: correct ? "correct" : "incorrect",
+      difficulty: active.question.difficulty,
+      dateCompleted: todayIso(),
+      nextReviewDate: nextReviewDate(correct, active.question.difficulty),
+      elapsedMs: Date.now() - startedAt
+    };
+    const next = [result, ...results];
+    setResults(next);
+    saveResults(next);
+    setFeedback({ ...active, choice, correct });
+  };
+  const next = () => {
+    setFeedback(null);
+    setStartedAt(Date.now());
+    setIndex(index + 1);
+  };
+  if (!active) {
+    return <section className="panel"><div className="section-title"><div><span>Chart Quiz</span><h2>No validated chart questions available.</h2></div></div><p className="definition">Chart questions only appear when a chart has matching trainer markup and required visible features. Use Concept Quiz or Chart Drills for now.</p></section>;
+  }
+  return (
+    <div className="quiz-layout">
+      {feedback ? (
+        <section className={cls("feedback-card", feedback.correct ? "correct" : "incorrect")}>
+          <h2>{feedback.correct ? "Correct. Match the chart evidence." : "Review the chart evidence."}</h2>
+          <div className="quiz-chart-example"><ChartPreview scenario={feedback.scenario} showCallouts /></div>
+          <p><strong>Your answer:</strong> {feedback.choice}</p>
+          <p><strong>Correct answer:</strong> {feedback.question.correctAnswer}</p>
+          <p><strong>Why:</strong> {feedback.question.explanation}</p>
+          {!feedback.correct && <p><strong>Why your answer is wrong:</strong> {feedback.question.whyWrong[feedback.choice] ?? "The chart markup does not support that answer."}</p>}
+          <p><strong>Why other answers are wrong:</strong> {feedback.question.answerChoices.filter((choice) => choice !== feedback.question.correctAnswer).map((choice) => `${choice}: ${feedback.question.whyWrong[choice] ?? "not supported by the visible chart features"}`).join(" ")}</p>
+          <p><strong>Visible features checked:</strong> {feedback.question.requiredVisibleFeatures.join(", ")}</p>
+          <button className="primary-button" onClick={next}>Next chart question</button>
+        </section>
+      ) : (
+        <section className="quiz-card">
+          <div className="quiz-meta"><span>{modelLabels[active.question.concept]} - Chart Quiz</span><DifficultyBadge level={active.question.difficulty} /></div>
+          <h2>{active.question.prompt}</h2>
+          <div className="quiz-chart-example"><ChartPreview scenario={active.scenario} showCallouts={false} /></div>
+          <div className="choice-grid">{active.question.answerChoices.map((choice) => <button key={choice} onClick={() => answer(choice)}>{choice}</button>)}</div>
+          <p className="empty">The chart is required for this question. Answer only from visible chart evidence.</p>
         </section>
       )}
     </div>
@@ -1213,10 +1296,11 @@ function StartHere({ setPage, certificationProgress }: { setPage: (page: Page) =
         <div className="section-title"><div><span>What happens next?</span><h2>The app will guide you through this sequence</h2></div></div>
         <div className="onboarding-grid">
           {[
-            ["1. Short lesson", "Review the exact Liquidity concept and checklist."],
-            ["2. Quiz", "Answer mixed mastery questions with confidence tracking."],
-            ["3. Chart drills", "Mark liquidity on chart examples before trainer reveal."],
-            ["4. Replay + review", "Practice without future candles, then repeat missed items."]
+            ["1. Learn", "Watch the required Liquidity lesson and save completion."],
+            ["2. Concept Quiz", "Answer text-only questions about terminology, logic, and validation."],
+            ["3. Chart Quiz", "Answer chart-recognition questions where each chart is tied to its own prompt."],
+            ["4. Drill + Replay", "Mark charts manually, then practice without future candles."],
+            ["5. Review", "Repeat missed items and check what remains for certification."]
           ].map(([title, copy]) => <article key={title}><strong>{title}</strong><p>{copy}</p></article>)}
         </div>
       </section>
@@ -1234,7 +1318,7 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
   const hasCompletedVideo = liquidityModule.videos.some((video) => certificationProgress.watchedVideos[video.id]);
   const liquidityResults = results.filter((result) => result.model === "Liquidity");
   const liquidityAccuracy = liquidityResults.length ? Math.round((liquidityResults.filter((result) => result.result === "correct").length / liquidityResults.length) * 100) : 0;
-  const steps = ["Watch Video", "Pass Quiz", "Complete Drill", "Complete Replay", "Review Mistakes", "Final Exam"];
+  const steps = ["Learn", "Concept Quiz", "Chart Quiz", "Chart Drill", "Replay", "Review Mistakes", "Session Summary"];
   const current = steps[step];
   const requirements = [
     `Watch ${liquidityModule.videos.length} videos`,
@@ -1294,18 +1378,19 @@ function TodayTraining({ setPage, results, setResults, startQuiz, certificationP
         {!started && (
           <div className="step-ready">
             <strong>{current}</strong>
-            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Pass the quiz for the lesson you just completed." : step === 2 ? "Mark liquidity on chart examples before trainer reveal." : step === 3 ? "Step through candles without future information." : step === 4 ? "Review missed answers." : "Check what remains before the Liquidity final exam unlocks."}</p>
+            <p>{step === 0 ? `Watch this exact video next: ${nextVideo.creator} - ${nextVideo.title}.` : step === 1 ? "Answer text-only concept questions. No chart is shown here." : step === 2 ? "Answer chart recognition questions where each chart is paired with its own question." : step === 3 ? "Mark liquidity on chart examples before trainer reveal." : step === 4 ? "Step through candles without future information." : step === 5 ? "Review missed answers." : "Check what remains before the Liquidity final exam unlocks."}</p>
             {stepBlocked && <div className="mode-help"><strong>Prerequisite</strong><p>Complete the video step first. The quiz unlocks automatically after the lesson is saved.</p></div>}
-            <button className="primary-button solo-action" disabled={stepBlocked} onClick={beginStep}>{step === 0 ? "Start Lesson" : step === 1 ? "Start Quiz" : step === 2 ? "Start Drill" : step === 3 ? "Start Replay" : step === 4 ? "Start Review" : "View Certification Progress"}</button>
+            <button className="primary-button solo-action" disabled={stepBlocked} onClick={beginStep}>{step === 0 ? "Start Lesson" : step === 1 ? "Start Concept Quiz" : step === 2 ? "Start Chart Quiz" : step === 3 ? "Start Drill" : step === 4 ? "Start Replay" : step === 5 ? "Start Review" : "View Certification Progress"}</button>
           </div>
         )}
       </section>
       {started && step === 0 && <section className="panel model-detail"><div className="section-title"><div><span>Lesson</span><h2>{nextVideo.creator} - {nextVideo.title}</h2></div>{nextVideo.url && <a className="ghost-button" href={nextVideo.url} target="_blank" rel="noreferrer">Open Video</a>}</div><div className="next-video-card in-panel"><span>Why this lesson is required</span><p>{nextVideo.whyRequired}</p><small>Learn: {(nextVideo.concepts ?? []).join(", ")}</small></div><p className="definition">{getModel("Liquidity").definition}</p><ul className="checklist">{getModel("Liquidity").checklist.map((item) => <li key={item}><CheckCircle2 size={16} />{item}</li>)}</ul><div className="answer-panel"><strong>Focus</strong><p>Do not call every wick a sweep. First locate obvious buy-side or sell-side liquidity, then ask whether price raided it, rejected it, and displaced away. An ICT model alone is not a complete trade setup.</p></div><button className="primary-button solo-action sticky-next" onClick={completeVideoStep}><CheckCircle2 size={17} />Complete Video</button></section>}
-      {started && step === 1 && <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Quiz</button></>}
-      {started && step === 2 && <><ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} /><button className="primary-button solo-action sticky-next" onClick={completeDrillStep}>Complete Drill</button></>}
-      {started && step === 3 && <><ReplayMode results={results} setResults={setResults} /><button className="primary-button solo-action sticky-next" onClick={completeReplayStep}>Complete Replay</button></>}
-      {started && step === 4 && <><ReviewQueue results={results} onPractice={startQuiz} /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Review</button></>}
-      {started && step === 5 && (
+      {started && step === 1 && <><TextQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Concept Quiz</button></>}
+      {started && step === 2 && <><ChartQuiz results={results} setResults={setResults} initialModel="Liquidity" /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Chart Quiz</button></>}
+      {started && step === 3 && <><ChartTrainingMode scenarios={liquidityDrills.slice(0, 10)} results={results} setResults={setResults} /><button className="primary-button solo-action sticky-next" onClick={completeDrillStep}>Complete Drill</button></>}
+      {started && step === 4 && <><ReplayMode results={results} setResults={setResults} /><button className="primary-button solo-action sticky-next" onClick={completeReplayStep}>Complete Replay</button></>}
+      {started && step === 5 && <><ReviewQueue results={results} onPractice={startQuiz} /><button className="primary-button solo-action sticky-next" onClick={completeStep}>Complete Review</button></>}
+      {started && step === 6 && (
         <section className="panel">
           <div className="section-title"><div><span>Final Exam</span><h2>Liquidity certification progress</h2></div></div>
           <ProgressSummary results={results} />
